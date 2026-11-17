@@ -1,0 +1,2372 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>NigiroCORE</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <meta name="color-scheme" content="light dark">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="vendor/fonts/google.css" rel="stylesheet">
+  <link rel="preload" href="/fonts/MaterialSymbolsRounded.woff2" as="font" type="font/woff2" crossorigin>
+  <style>
+    @font-face { font-family:'Material Symbols Rounded'; font-style:normal; font-weight:100 700; src:url(/fonts/MaterialSymbolsRounded.woff2) format('woff2'); font-display:block; }
+  </style>
+  <!-- Nothing UI (scoped: hanya berlaku di dalam [data-nothing]) -->
+  <link rel="stylesheet" href="vendor/nothing-ui/tokens.css">
+  <style>
+    /* ===== Nothing UI scoped region (dashboard) =====
+       Token Nothing dipetakan ke prefix --n- agar tidak bentrok dengan --md- M3.
+       Light mode: dashboard ikut light token Nothing; dark mode: dark token. */
+    [data-nothing] {
+      --n-bg: #F2F2F2; --n-surface: #FFF; --n-raised: #EDEDED;
+      --n-line: #E2E2E2; --n-line-2: #CFCFCF;
+      --n-muted: #9A9A9A; --n-secondary: #585A5A;
+      --n-primary: #1C1C1C; --n-display: #000;
+      --n-accent: #D71921; --n-accent-text: #C2141C;
+      --n-glass: rgba(255,255,255,.96); --n-glass-brd: rgba(0,0,0,.08);
+      --n-dot: rgba(0,0,0,.35);
+      --n-f-display: 'Doto', monospace;
+      --n-f-ui: 'Geist', 'Plus Jakarta Sans', sans-serif;
+      --n-f-mono: 'Geist Mono', 'JetBrains Mono', monospace;
+      --n-f-head: 'Geist', 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--n-bg);
+      color: var(--n-primary);
+      font-family: var(--n-f-ui);
+      position: relative;
+      isolation: isolate;
+      border-radius: 16px;
+      padding: 24px;
+      transition: background .35s ease-in-out, color .35s ease-in-out;
+    }
+    body.dark [data-nothing] {
+      background-color: #000; /* literal: hindari race resolusi var() saat toggle */
+      --n-bg: #000; --n-surface: #0C0C0C; --n-raised: #171717;
+      --n-line: #262626; --n-line-2: #3A3A3A;
+      --n-muted: #5A5A5A; --n-secondary: #8C8C8C;
+      --n-primary: #EDEDED; --n-display: #FFF;
+      --n-accent-text: #FF4438;
+      --n-glass: rgba(16,16,16,.9); --n-glass-brd: rgba(255,255,255,.09);
+      --n-dot: rgba(255,255,255,.42);
+    }
+    /* dot field: signature Nothing, difference-blend (satu rule utk dua tema) */
+    [data-nothing]::before { content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
+      background-image: radial-gradient(var(--n-dot) 1.3px, transparent 1.7px);
+      background-size:120px 120px; background-attachment:fixed; mix-blend-mode:difference; border-radius:16px; }
+    /* fonts lokal */
+    @font-face { font-family:'Doto'; src:url('vendor/nothing-ui/fonts/open/Doto-ROND-wght.ttf') format('truetype'); font-weight:100 900; }
+    @font-face { font-family:'Geist'; src:url('vendor/nothing-ui/fonts/open/Geist-Regular.ttf') format('truetype'); font-weight:400; }
+    @font-face { font-family:'Geist'; src:url('vendor/nothing-ui/fonts/open/Geist-SemiBold.ttf') format('truetype'); font-weight:600; }
+    @font-face { font-family:'Geist Mono'; src:url('vendor/nothing-ui/fonts/open/GeistMono-Regular.ttf') format('truetype'); font-weight:400; }
+    @font-face { font-family:'Geist Mono'; src:url('vendor/nothing-ui/fonts/open/GeistMono-Medium.ttf') format('truetype'); font-weight:500; }
+    /* komponen Nothing di dalam region */
+    [data-nothing] .n-label { font-family:var(--n-f-mono); text-transform:uppercase; font-size:9px; letter-spacing:.12em; color:var(--n-secondary); }
+    [data-nothing] .n-card { background:var(--n-glass); backdrop-filter:blur(14px); border-radius:8px;
+      border:1px solid var(--n-glass-brd); padding:22px; transition:transform .2s ease-in-out; }
+    [data-nothing] .n-card:hover { transform:translateY(-2px); }
+    [data-nothing] .n-card .card-icon { width:40px; height:40px; border-radius:12px; background:var(--n-raised); color:var(--n-secondary); display:flex; align-items:center; justify-content:center; }
+    [data-nothing] .n-metric { font-family:var(--n-f-display); font-variation-settings:'ROND' 100; font-weight:500; font-size:40px; color:var(--n-display); line-height:1; }
+    [data-nothing] .n-metric-unit { font-family:var(--n-f-mono); font-size:11px; color:var(--n-secondary); margin-left:4px; }
+    [data-nothing] .n-ttl { font-family:var(--n-f-head); font-weight:600; font-size:18px; color:var(--n-display); }
+    [data-nothing] .n-ds { font-size:10px; color:var(--n-secondary); font-family:var(--n-f-mono); }
+    [data-nothing] .n-hairline { height:1px; background:var(--n-line); border:none; }
+    [data-nothing] .n-btn { font-family:var(--n-f-mono); text-transform:uppercase; font-size:10px; letter-spacing:.1em;
+      background:var(--n-display); color:var(--n-bg); border:none; border-radius:6px; padding:10px 18px; cursor:pointer; transition:opacity .2s ease-in-out; }
+    [data-nothing] .n-btn:hover { opacity:.8; }
+    [data-nothing] .n-btn:disabled { opacity:.3; cursor:default; }
+    [data-nothing] .n-btn-outline { background:transparent; color:var(--n-primary); border:1px solid var(--n-line-2); }
+    [data-nothing] .n-progress { height:4px; background:var(--n-raised); border-radius:2px; overflow:hidden; }
+    [data-nothing] .n-progress > div { height:100%; background:var(--n-display); transition:width .35s ease-in-out; }
+    /* ===== Nothing UI token global (di body, agar semua view bisa pakai) ===== */
+    body {
+      --n-bg: #F2F2F2; --n-surface: #FFF; --n-raised: #EDEDED;
+      --n-line: #E2E2E2; --n-line-2: #CFCFCF;
+      --n-muted: #9A9A9A; --n-secondary: #585A5A;
+      --n-primary: #1C1C1C; --n-display: #000;
+      --n-accent: #D71921; --n-accent-text: #C2141C;
+      --n-glass: rgba(255,255,255,.96); --n-glass-brd: rgba(0,0,0,.08);
+      --n-dot: rgba(0,0,0,.35);
+      --n-f-display: 'Doto', monospace;
+      --n-f-ui: 'Geist', 'Plus Jakarta Sans', sans-serif;
+      --n-f-mono: 'Geist Mono', 'JetBrains Mono', monospace;
+      --n-f-head: 'Geist', 'Plus Jakarta Sans', sans-serif;
+    }
+    body.dark {
+      --n-bg: #000; --n-surface: #0C0C0C; --n-raised: #171717;
+      --n-line: #262626; --n-line-2: #3A3A3A;
+      --n-muted: #5A5A5A; --n-secondary: #8C8C8C;
+      --n-primary: #EDEDED; --n-display: #FFF;
+      --n-accent-text: #FF4438;
+      --n-glass: rgba(16,16,16,.9); --n-glass-brd: rgba(255,255,255,.09);
+      --n-dot: rgba(255,255,255,.42);
+    }
+    /* ===== Nothing UI frame: topbar + sidebar ===== */
+    /* Topbar: hairline bawah, glass, dot field tipis */
+    body .topbar {
+      background: var(--n-glass);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--n-glass-brd);
+      color: var(--n-primary);
+      font-family: var(--n-f-ui);
+      transition: background .35s ease-in-out, color .35s ease-in-out;
+    }
+    .topbar::before { content:""; position:absolute; left:0; right:0; bottom:0; height:56px; z-index:-1; pointer-events:none;
+      background-image: radial-gradient(var(--n-dot) 1.3px, transparent 1.7px);
+      background-size:120px 120px; mix-blend-mode:difference; opacity:.25; }
+    .topbar .brand { display:flex; align-items:center; }
+    .topbar .brand span { font-family:var(--n-f-ui); font-weight:600; font-size:18px; color:var(--n-display); letter-spacing:-.01em; }
+    .topbar .brand b { font-weight:600; }
+    .topbar .brand svg { display:none; } /* logo Google 4 warna tidak Nothing - ganti monogram dot */
+    .topbar .brand::before { content:none; } /* diganti logo horizontal PNG */
+    .topbar .icon-btn { color:var(--n-secondary); border-radius:8px; }
+    .topbar .icon-btn:hover { background:var(--n-raised); color:var(--n-primary); }
+    .topbar .searchbar {
+      background: var(--n-raised);
+      border: 1px solid var(--n-line);
+      border-radius: 8px;
+      height: 36px;
+      transition: border-color .2s ease-in-out;
+    }
+    .topbar .searchbar:hover, .topbar .searchbar:focus-within { background: var(--n-raised); box-shadow:none; border-color: var(--n-line-2); }
+    .topbar .searchbar input { font-family:var(--n-f-mono); font-size:13px; color:var(--n-primary); }
+    .topbar .searchbar input::placeholder { color:var(--n-muted); text-transform:uppercase; font-size:11px; letter-spacing:.08em; }
+    .topbar .searchbar .msr { color:var(--n-secondary); }
+    .topbar .avatar {
+      background: var(--n-display); color: var(--n-bg);
+      font-family: var(--n-f-mono); font-size:13px; font-weight:500;
+      border-radius: 8px;
+    }
+    /* Sidebar: hairline kanan, nav item Nothing */
+    body .sidebar {
+      background: var(--n-bg);
+      border-right: 1px solid var(--n-glass-brd);
+      color: var(--n-primary);
+      font-family: var(--n-f-ui);
+      transition: background .35s ease-in-out, color .35s ease-in-out;
+    }
+    .sidebar .nav-item {
+      border-radius: 8px;
+      font-family: var(--n-f-mono);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--n-secondary);
+      transition: background .15s ease-in-out, color .15s ease-in-out;
+    }
+    .sidebar .nav-item:hover { background: var(--n-raised); color: var(--n-primary); }
+    .sidebar .nav-item.active { background: var(--n-display); color: var(--n-bg); } /* inversi khas Nothing */
+    /* Sign Out: merah saat expanded; collapsed = icon-only merah tanpa container */
+    .sidebar .nav-signout { color: #fff; background: rgba(215,25,33,.9); margin: 4px 8px; border-radius: 8px; }
+    .sidebar .nav-signout .msr { color: #fff; }
+    .sidebar .nav-signout:hover { background: var(--n-accent-text, #C2141C); color: #fff; }
+    .sidebar.collapsed .nav-signout { background: transparent; margin: 0; border-radius: 8px; }
+    .sidebar.collapsed .nav-signout .msr { color: var(--n-accent, #D71921); }
+    .sidebar.collapsed .nav-signout:hover { background: var(--n-raised); }
+    .sidebar .nav-item .msr { font-size:18px; color:inherit; }
+    .sidebar > div > .nav-item { border-top: none; }
+    .sidebar > div { border-top: 1px solid var(--n-line) !important; }
+    /* category label di sidebar */
+    body .nav-cat {
+      font-family: var(--n-f-mono); font-size: 9px; text-transform: uppercase; letter-spacing: .14em;
+      color: var(--n-muted); padding: 14px 16px 6px; user-select: none;
+    }
+    body .sidebar.collapsed .nav-cat { font-size: 0; text-align: center; padding: 14px 0 6px; }
+    /* rail mode: label kategori jadi singkatan (MAIN/LIB/WORK/MNG) — tinggi tetap, icon gak geser */
+    body .sidebar.collapsed .nav-cat::after {
+      content: attr(data-short); font-size: 8px; letter-spacing: .1em; color: var(--n-muted);
+    }
+    /* wrapper Manage: margin-top auto (dorong ke bawah) + border pemisah */
+    body .nav-manage { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--md-outline-variant); }
+    /* collapsed: semua nilai TETAP sama — hanya teks label yang berubah jadi singkatan */
+    body .sidebar.collapsed .nav-manage { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--md-outline-variant); }
+
+    /* ===== Monitoring (Nothing UI) ===== */
+    body #monAlertBanner {
+      margin-bottom: 14px; padding: 10px 14px; border: 1px solid var(--n-accent, #D71921);
+      font-family: var(--n-f-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+      color: var(--n-accent, #D71921); background: color-mix(in srgb, var(--n-accent, #D71921) 6%, transparent);
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    body .mon-item {
+      display: block; width: 100%; padding: 12px 14px; cursor: pointer; text-align: left;
+      background: transparent; border: none; border-bottom: 1px solid var(--n-line);
+      font-family: var(--n-f-ui); color: var(--n-display); transition: background .15s;
+    }
+    body .mon-item:last-child { border-bottom: none; }
+    body .mon-item:hover { background: var(--n-glass); }
+    body .mon-item.act { background: var(--n-display); color: var(--n-bg); }
+    body .mon-item.act .mon-sub, body .mon-item.act .mon-cat { color: var(--n-bg); }
+    body .mon-item .mon-top { display: flex; align-items: center; gap: 8px; }
+    body .mon-item .mon-title { font-size: 12px; font-weight: 500; flex: 1; letter-spacing: .02em; }
+    body .mon-item .mon-sub { font-family: var(--n-f-mono); font-size: 11px; color: var(--n-secondary); }
+    body .mon-item .mon-cat { font-family: var(--n-f-mono); font-size: 8px; letter-spacing: .14em; text-transform: uppercase; color: var(--n-muted); margin-top: 6px; display: block; }
+    body .mon-stat {
+      padding: 14px 16px; border: 1px solid var(--n-line);
+    }
+    body .mon-stat .k { font-family: var(--n-f-mono); font-size: 9px; text-transform: uppercase; letter-spacing: .14em; color: var(--n-muted); }
+    body .mon-stat .v { font-family: var(--n-f-mono); font-size: 22px; font-weight: 600; margin-top: 6px; color: var(--n-display); letter-spacing: -.01em; }
+    body .mon-stat .v small { font-size: 11px; font-weight: 400; color: var(--n-secondary); margin-left: 4px; }
+    body #monDetail .mon-head { display: flex; align-items: baseline; gap: 12px; padding: 16px 18px 12px; border-bottom: 1px solid var(--n-line); }
+    body #monDetail .mon-head h3 { margin: 0; font-family: var(--n-f-ui); font-size: 20px; font-weight: 600; letter-spacing: -.01em; color: var(--n-display); }
+    body #monDetail .mon-head .model { margin-left: auto; font-family: var(--n-f-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--n-muted); }
+
+    /* ===== Gallery + Videos + Scrubber (Nothing UI) ===== */
+    body .date-header {
+      background: var(--n-glass);
+      backdrop-filter: blur(14px);
+      color: var(--n-secondary);
+      font-family: var(--n-f-mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      border-bottom: 1px solid var(--n-line);
+      padding: 12px 4px 10px;
+    }
+    body.dark .date-header { --n-glass: rgba(0,0,0,.92); --n-line: #262626; --n-secondary: #8C8C8C; }
+    body .photo { border-radius: 2px; background: var(--n-raised); }
+    body .photo:hover img { filter: brightness(.8); }
+    body .year-scrubber .yr {
+      font-family: var(--n-f-display);
+      font-variation-settings: 'ROND' 100;
+      font-size: 15px;
+      color: var(--n-secondary);
+      border-radius: 6px;
+    }
+    body .year-scrubber .yr:hover { background: var(--n-raised); color: var(--n-primary); }
+    body .year-scrubber .yr.active { background: var(--n-display); color: var(--n-bg); } /* inversi */
+    body .year-scrubber .mo {
+      font-family: var(--n-f-mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--n-secondary);
+      border-radius: 4px;
+    }
+    body .year-scrubber .mo:hover { background: var(--n-raised); color: var(--n-primary); }
+    body #empty, body #videos-empty { color: var(--n-secondary); font-family: var(--n-f-mono); font-size: 12px; }
+    body #empty .msr, body #videos-empty .msr { color: var(--n-muted); }
+
+    /* n-btn global (sebelumnya cuma scoped [data-nothing]) */
+    body .n-btn { font-family:var(--n-f-mono); text-transform:uppercase; font-size:10px; letter-spacing:.1em;
+      background:var(--n-display); color:var(--n-bg); border:none; border-radius:6px; padding:10px 18px; cursor:pointer; transition:opacity .2s ease-in-out; }
+    body .n-btn:hover { opacity:.8; }
+    body .n-btn:disabled { opacity:.3; cursor:default; }
+
+    /* ===== Files Explorer (Nothing UI) ===== */
+    body .crumbs { font-family: var(--n-f-mono); }
+    body .crumb {
+      font-family: var(--n-f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .06em;
+      color: var(--n-secondary); border-radius: 6px; padding: 6px 10px;
+    }
+    body .crumb:hover { background: var(--n-raised); }
+    body .crumb:last-child { color: var(--n-display); font-weight: 500; }
+    body .explorer-toolbar { border-bottom: 1px solid var(--n-line); }
+    body .view-toggle { border-radius: 6px; color: var(--n-secondary); }
+    body .view-toggle:hover { background: var(--n-raised); }
+    body .view-toggle.active { background: var(--n-display); color: var(--n-bg); } /* inversi */
+    body .frow { border-radius: 0; }
+    body .frow:hover { background: var(--n-raised); }
+    body .frow.selected { background: var(--n-raised); box-shadow: inset 3px 0 0 var(--n-accent); }
+    body .frow .msr { color: var(--n-secondary); }
+    body .frow .fmeta { color: var(--n-secondary); font-family: var(--n-f-mono); font-size: 12px; }
+    body .fcard { border-radius: 0; }
+    body .fcard:hover { background: var(--n-raised); }
+    body .fcard.selected { border-color: var(--n-accent); background: var(--n-raised); box-shadow: 0 0 0 1px var(--n-accent); }
+    body .fcard .msr { color: var(--n-secondary); }
+    body .fcard .fmeta { color: var(--n-secondary); font-family: var(--n-f-mono); }
+    /* Documents view (Nothing UI) — hover ala Files */
+    body .doc-row { border-radius: 0; }
+    body .doc-row:hover { background: var(--n-raised); }
+    body .doc-card { border-radius: 0; }
+    body .doc-card:hover { background: var(--n-raised); }
+    /* container file list kotak (bukan melengkung) — konsisten Nothing UI */
+    body .file-list, body .file-grid { border-radius: 0; }
+    body select {
+      height: 34px; border: 1px solid var(--n-line); border-radius: 6px;
+      background: var(--n-raised); color: var(--n-primary);
+      font-family: var(--n-f-mono); font-size: 12px; padding: 0 8px; cursor: pointer;
+    }
+    body .sync-btn {
+      height: 38px; padding: 0 20px; border-radius: 6px;
+      background: var(--n-display); color: var(--n-bg);
+      font-family: var(--n-f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+      font-weight: 500; box-shadow: none;
+      transition: opacity .2s ease-in-out;
+    }
+    body .sync-btn:hover { box-shadow: none; opacity: .8; }
+    body .sync-btn:disabled { background: var(--n-raised); color: var(--n-muted); box-shadow: none; cursor: default; opacity: 1; }
+    body .status-chip { font-family: var(--n-f-mono); font-size: 12px; color: var(--n-secondary); }
+
+    /* ===== Page headers semua view (Nothing) ===== */
+    body .dash-header h2 {
+      font-family: var(--n-f-head); font-weight: 600; font-size: 28px; color: var(--n-display);
+    }
+    body .dash-header p { font-family: var(--n-f-mono); font-size: 12px; color: var(--n-secondary); }
+    body .dash-section h3 {
+      font-family: var(--n-f-head); font-weight: 600; font-size: 20px; color: var(--n-display);
+    }
+    body .dash-section h3 .msr { color: var(--n-secondary); }
+    /* Settings: override h3 + section jadi Nothing mono (set-h3 lebih spesifik) */
+    body .dash-section h3.set-h3 { font-family: var(--n-f-mono); font-weight: 700; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--n-secondary); margin: 0 0 12px; padding-bottom: 10px; border-bottom: 1px solid var(--n-line); }
+    body .dash-section h3.set-h3 .msr { font-size: 18px; color: var(--n-display); }
+
+    /* ===== Panel & list cards (Nothing) ===== */
+    body .hist-item { background: var(--n-glass); border: 1px solid var(--n-glass-brd); border-radius: 8px; }
+    body .hist-item:hover { background: var(--n-raised); }
+    body .hist-title { color: var(--n-primary); font-family: var(--n-f-ui); }
+    body .hist-sub { color: var(--n-secondary); font-family: var(--n-f-mono); font-size: 11px; }
+    body .hist-badge { font-family: var(--n-f-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; border-radius: 4px; }
+    body .hist-badge.ok { background: var(--n-display); color: var(--n-bg); }
+    body .hist-badge.warn { background: var(--n-accent); color: #FFF; }
+    body .year-label { color: var(--n-primary); font-family: var(--n-f-display); font-variation-settings: 'ROND' 100; font-size: 15px; }
+    body .year-count { color: var(--n-secondary); font-family: var(--n-f-mono); }
+    body .year-bar-track { background: var(--n-raised); border-radius: 3px; }
+    body .year-bar { background: var(--n-display); border-radius: 3px; }
+
+    /* ===== Toast (Nothing) ===== */
+    body .toast {
+      background: var(--n-display); color: var(--n-bg);
+      font-family: var(--n-f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+      border-radius: 8px; box-shadow: none;
+    }
+
+    /* ===== Dialogs (Nothing) ===== */
+    body .dialog-backdrop { background: rgba(0,0,0,.55); backdrop-filter: blur(4px); }
+    body .dialog {
+      background: var(--n-bg); border: 1px solid var(--n-glass-brd); border-radius: 12px;
+      box-shadow: 0 24px 64px rgba(0,0,0,.4); color: var(--n-primary);
+      font-family: var(--n-f-ui);
+    }
+    body .dialog h3 { font-family: var(--n-f-head); font-weight: 600; color: var(--n-display); }
+    body .dialog p, body .dialog small, body .dialog label { color: var(--n-secondary); }
+    body .dialog label { font-family: var(--n-f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+    body .dialog input[type=text], body .dialog input:not([type]) {
+      background: var(--n-raised); border: 1px solid var(--n-line); border-radius: 6px;
+      color: var(--n-primary); font-family: var(--n-f-mono); font-size: 13px;
+    }
+    body .dialog input:focus { border-color: var(--n-line-2); outline: none; }
+    body .opt {
+      background: var(--n-raised); border-radius: 8px; color: var(--n-primary);
+      font-family: var(--n-f-ui); transition: background .15s ease-in-out;
+    }
+    body .opt:hover { background: var(--n-line); }
+    body .opt b { color: var(--n-display); }
+    body .opt .msr { color: var(--n-secondary) !important; }
+
+    /* ===== Lightbox chrome (Nothing) ===== */
+    body .lightbox { background: var(--n-bg); }
+    body .lb-top { border-bottom: 1px solid var(--n-glass-brd); background: var(--n-glass); backdrop-filter: blur(14px); }
+    body .lb-top .icon-btn { color: var(--n-secondary); border-radius: 6px; }
+    body .lb-top .icon-btn:hover { background: var(--n-raised); color: var(--n-primary); }
+    body .lb-name { color: var(--n-secondary); font-family: var(--n-f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+    body .lb-nav { color: var(--n-secondary); border-radius: 8px; }
+    body .lb-nav:hover { background: var(--n-raised); color: var(--n-primary); }
+    body #lb-info { background: var(--n-surface); color: var(--n-primary); border-left: 1px solid var(--n-line); }
+    body #lb-info .icon-btn { color: var(--n-secondary); }
+    body #lb-minimap { background: var(--n-glass); backdrop-filter: blur(14px); border: 1px solid var(--n-glass-brd); border-radius: 8px; }
+    body #mm-box { border-color: var(--n-accent) !important; background: rgba(215,25,33,.15) !important; }
+    body #mm-slider { accent-color: var(--n-accent); }
+
+    /* ===== Maps (Nothing) ===== */
+    body .map-layer-switcher { display:flex; flex-direction:column; gap:2px; background:var(--n-glass); backdrop-filter:blur(14px); border:1px solid var(--n-glass-brd); border-radius:8px; padding:4px; box-shadow:none; }
+    body .map-layer-btn {
+      font-family:var(--n-f-mono); font-size:10px; text-transform:uppercase; letter-spacing:.08em;
+      background:transparent; color:var(--n-secondary); border:none; border-radius:4px;
+      padding:7px 14px; cursor:pointer; text-align:left; transition:background .15s ease-in-out,color .15s ease-in-out;
+    }
+    body .map-layer-btn:hover { background:var(--n-raised); color:var(--n-primary); }
+    body .map-layer-btn.active { background:var(--n-display); color:var(--n-bg); } /* inversi */
+    body .leaflet-control-zoom a { background:var(--n-glass) !important; color:var(--n-primary) !important; border:none !important; border-radius:4px !important; }
+    body .leaflet-control-attribution { font-family:var(--n-f-mono); font-size:9px; background:rgba(255,255,255,.8) !important; }
+    body .leaflet-popup-content-wrapper { background:var(--n-bg); color:var(--n-primary); border:1px solid var(--n-glass-brd); border-radius:8px; box-shadow:0 12px 32px rgba(0,0,0,.3); }
+    body .leaflet-popup-tip { background:var(--n-bg); }
+    body .leaflet-popup-content { font-family:var(--n-f-ui); margin:14px 16px; }
+  </style>
+  <style>
+    .msr { font-family:'Material Symbols Rounded'; font-weight:normal; font-style:normal; font-size:24px; line-height:1; letter-spacing:normal; text-transform:none; display:inline-block; white-space:nowrap; word-wrap:normal; direction:ltr; -webkit-font-feature-settings:'liga'; -webkit-font-smoothing:antialiased; font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; user-select:none; }
+    /* anti-FOUT: sembunyikan teks ligature sampai font icon siap */
+    .msr:not(.msr-ready) { visibility:hidden; }
+    .msr.msr-ready { visibility:visible; }
+    .msr.filled { font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24; }
+  </style>
+  <style>
+    /* ===== Material Design 3 tokens (m3.material.io, CC BY 4.0 / Apache-2.0) =====
+       Palet: M3 baseline light scheme, primary = #0b57d0 */
+    :root {
+      /* Color roles */
+      --md-primary: #0b57d0;
+      --md-on-primary: #ffffff;
+      --md-primary-container: #d3e3fd;
+      --md-on-primary-container: #041e49;
+      --md-secondary-container: #e1e9f7;
+      --md-on-secondary-container: #041e49;
+      --md-surface: #ffffff;
+      --md-surface-container: #e8edf3;
+      --md-surface-container-high: #dde3ec;
+      --md-surface-container-low: #f0f2f7;
+      --md-on-surface: #1f1f1f;
+      --md-on-surface-variant: #444746;
+      --md-outline: #c4c7c5;
+      --md-outline-variant: #e2e2e2;
+      --md-error: #b3261e;
+      --md-shadow-1: 0 1px 2px rgba(0,0,0,.3), 0 1px 3px 1px rgba(0,0,0,.15);
+      --md-shadow-2: 0 1px 2px rgba(0,0,0,.3), 0 2px 6px 2px rgba(0,0,0,.15);
+      /* Shape */
+      --shape-xs: 4px; --shape-sm: 8px; --shape-md: 12px;
+      --shape-lg: 16px; --shape-xl: 28px; --shape-full: 999px;
+      /* Motion (M3 emphasized easing) */
+      --ease-emph: cubic-bezier(.2, 0, 0, 1);
+      --dur-short: 150ms; --dur-med: 300ms;
+      /* State layers */
+      --state-hover: rgba(11,87,208,.08);
+    }
+
+    :root { --gp-blue: var(--md-primary); --outline: var(--md-outline); }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:'Plus Jakarta Sans','Segoe UI',system-ui,sans-serif; background:var(--md-surface); color:var(--md-on-surface); transition:background .3s,color .3s; }
+    body.dark {
+      --md-primary: #a8c7fa;
+      --md-on-primary: #062e6f;
+      --md-primary-container: #0842a0;
+      --md-on-primary-container: #d3e3fd;
+      --md-secondary-container: #004a77;
+      --md-on-secondary-container: #c2e7ff;
+      --md-surface: #131314;
+      --md-surface-container: #1e1f20;
+      --md-surface-container-high: #2d2f31;
+      --md-surface-container-low: #1b1c1d;
+      --md-on-surface: #e3e3e3;
+      --md-on-surface-variant: #c4c7c5;
+      --md-outline: #8e918f;
+      --md-outline-variant: #444746;
+      --md-error: #f2b8b5;
+      --state-hover: rgba(168,199,250,.12);
+    }
+
+    /* Topbar */
+    .topbar { position:fixed; top:0; left:0; right:0; height:52px; display:flex; align-items:center; gap:4px; padding:0 12px; background:var(--md-surface-container); z-index:100; }
+    .icon-btn { width:36px; height:36px; border:none; background:transparent; border-radius:8px; display:grid; place-items:center; cursor:pointer; color:var(--md-on-surface-variant); flex-shrink:0; transition:background .15s; }
+    .icon-btn:hover { background:var(--md-surface-container-high); }
+    .brand { display:flex; align-items:center; gap:8px; padding:0 6px 0 2px; user-select:none; }
+    .brand svg { width:26px; height:26px; }
+    .brand span { font-size:22px; color:var(--md-on-surface-variant); }
+    .brand b { font-weight:400; }
+    .searchbar { flex:1; max-width:720px; margin:0 auto; height:36px; display:flex; align-items:center; gap:12px; padding:0 8px 0 14px; background:var(--md-secondary-container); border-radius:28px; transition:background .15s, box-shadow .15s; }
+    .searchbar:hover, .searchbar:focus-within { background:var(--md-secondary-container); box-shadow:0 1px 3px rgba(60,64,67,.18); }
+    .searchbar input { flex:1; border:none; outline:none; background:transparent; font-size:16px; font-family:inherit; }
+    .avatar { width:32px; height:32px; border-radius:50%; margin-left:auto; background:linear-gradient(135deg,#4285f4,#34a853); color:#fff; display:grid; place-items:center; font-size:15px; cursor:pointer; flex-shrink:0; }
+
+    /* Sidebar */
+    .sidebar { position:fixed; top:52px; left:0; bottom:0; width:256px; padding:8px 12px; overflow-y:auto; background:var(--md-surface-container); z-index:90; transition:width .2s cubic-bezier(.2,0,0,1); display:flex; flex-direction:column; }
+    /* collapsed: sidebar menyusut jadi rail 56px, hanya icon yang tersisa */
+    .sidebar.collapsed { transform:none; width:56px; padding:8px 8px; }
+    .sidebar.collapsed .nav-item { justify-content:center; padding:0; gap:0; overflow:hidden; }
+    .sidebar.collapsed .nav-item .msr { font-size:20px; }
+    /* Sign Out collapsed: icon-only merah, tanpa container merah (override di sini biar menang specificity order) */
+    .sidebar.collapsed .nav-signout { background: transparent !important; margin: 0; }
+    .sidebar.collapsed .nav-signout .msr { color: var(--n-accent, #D71921) !important; }
+    .sidebar.collapsed .nav-signout:hover { background: var(--n-raised) !important; }
+    /* sembunyikan teks label saat collapsed (icon-only) */
+    .sidebar.collapsed .nav-item { font-size:0; }
+    .sidebar.collapsed .tooltip { position:absolute; left:100%; margin-left:10px; background:var(--n-display); color:var(--n-bg);
+      font-family:var(--n-f-mono); font-size:10px; text-transform:uppercase; letter-spacing:.08em; padding:5px 10px; border-radius:6px;
+      white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .15s ease-in-out; z-index:200; }
+    .sidebar.collapsed .nav-item:hover .tooltip { opacity:1; }
+    .nav-item { display:flex; align-items:center; gap:14px; height:40px; padding:0 16px; border-radius:0 20px 20px 0; cursor:pointer; font-size:14px; font-weight:500; color:var(--md-on-surface); text-decoration:none; margin-bottom:2px; transition:background .15s; }
+    .nav-item:hover { background:var(--md-surface-container-high); }
+    .nav-item.active { background:var(--md-primary-container); color:var(--md-on-primary-container); }
+    .nav-item svg { width:20px; height:20px; flex-shrink:0; }
+
+    /* Konten utama lebih kontras dengan sidebar */
+    .main { margin-left:256px; padding:72px 16px 40px; transition:margin .2s cubic-bezier(.2,0,0,1); background:var(--md-surface); min-height:100vh; }
+    .main.expanded { margin-left:56px; } /* collapsed rail 56px masih menempel */
+
+    /* ===== Inner sidebar NIGIRO.MC (clone pola sidebar utama) ===== */
+    /* ===== NIGIRO.MC inner chrome — pola OPanel (grup + indikator + navbar blur) dalam tema Nothing ===== */
+    .mc-sidebar { width:200px; flex-shrink:0; display:flex; flex-direction:column; gap:2px; background:var(--n-raised); border:1px solid var(--n-line); border-radius:10px; padding:10px 8px; transition:width .2s cubic-bezier(.2,0,0,1); }
+    .mc-sidebar.collapsed { width:52px; padding:10px 6px; }
+    .mc-grp-label { font-family:var(--n-f-mono); font-size:9px; text-transform:uppercase; letter-spacing:.14em; color:var(--n-muted); padding:10px 10px 4px; }
+    .mc-sidebar.collapsed .mc-grp-label { display:none; }
+    .mc-nav { position:relative; display:flex; align-items:center; gap:10px; padding:8px 12px; border:none; border-radius:6px; background:transparent; color:var(--n-secondary); font-family:var(--n-f-ui); font-size:12px; text-transform:uppercase; letter-spacing:.06em; cursor:pointer; white-space:nowrap; }
+    .mc-nav:hover { background:var(--n-glass); color:var(--n-primary); }
+    /* indikator bar vertikal ala OPanel SidebarIndicator */
+    .mc-nav.sel { background:var(--n-glass); color:var(--n-primary); }
+    .mc-nav.sel::before { content:""; position:absolute; left:0; top:20%; bottom:20%; width:2px; background:var(--n-accent,#D71921); border-radius:2px; }
+    .mc-nav .msr { font-size:17px; color:inherit; flex-shrink:0; }
+    .mc-sidebar.collapsed .mc-nav { justify-content:center; padding:10px 0; gap:0; }
+    .mc-sidebar.collapsed .mc-nav-label { display:none; }
+    .mc-sidebar .tooltip { position:absolute; left:100%; margin-left:10px; background:var(--n-display); color:var(--n-bg); font-size:11px; font-family:var(--n-f-mono); text-transform:uppercase; padding:5px 10px; border-radius:6px; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .15s; z-index:50; }
+    .mc-sidebar.collapsed .mc-nav:hover .tooltip { opacity:1; }
+    /* navbar sticky dalam view (pola opanel navbar.tsx): blur + border-b + badge versi */
+    .mc-topbar { position:sticky; top:52px; z-index:40; display:flex; align-items:center; gap:10px; padding:10px 16px; margin-bottom:14px; background:color-mix(in srgb, var(--n-bg) 70%, transparent); backdrop-filter:blur(12px); border:1px solid var(--n-line); border-radius:10px; }
+    .mc-topbar .mc-ver { font-family:var(--n-f-mono); font-size:9px; letter-spacing:.1em; color:var(--n-secondary); border:1px solid var(--n-line); border-radius:6px; padding:2px 8px; display:inline-flex; align-items:center; gap:5px; }
+    .mc-topbar .mc-ver i { width:5px; height:5px; border-radius:50%; background:var(--n-secondary); display:inline-block; }
+  /* tabs ala opanel players page */
+  .mc-tab2 { background:transparent; border:none; border-bottom:2px solid transparent; color:var(--n-secondary); font-family:var(--n-f-mono); font-size:11px; text-transform:uppercase; letter-spacing:.08em; padding:8px 14px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+  .mc-tab2:hover { color:var(--n-primary); }
+  .mc-tab2.sel { color:var(--n-primary); border-bottom-color:var(--n-accent,#D71921); }
+  .mc-tab2 .mc-tbadge { font-size:9px; border:1px solid var(--n-line); border-radius:4px; padding:1px 6px; color:var(--n-secondary); }
+
+    /* Dashboard */
+    .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; max-width:1200px; }
+    .card { background:var(--md-surface); border-radius:16px; padding:20px; transition:box-shadow .15s; box-shadow:0 1px 2px rgba(0,0,0,.06); }
+    .card:hover { box-shadow:var(--md-shadow-1); }
+    .card .label { font-size:13px; color:var(--md-on-surface-variant); margin-bottom:6px; }
+    .card .value { font-size:28px; font-weight:400; }
+    .card .label { font-size:13px; color:var(--md-on-surface-variant); margin-bottom:6px; }
+    .card .value { font-size:28px; font-weight:400; }
+    .year-row { display:flex; align-items:center; gap:12px; max-width:600px; margin-bottom:10px; }
+    .year-bar-track { flex:1; height:6px; background:var(--md-surface-container-high); border-radius:3px; overflow:hidden; }
+    .year-bar { height:100%; background:var(--gp-blue); border-radius:3px; transition:width .4s ease; }
+
+    /* Gallery */
+    .date-header { position:sticky; top:52px; background:rgba(255,255,255,.95); backdrop-filter:blur(6px); padding:14px 4px 10px; font-size:14px; font-weight:500; color:var(--md-on-surface-variant); z-index:50; user-select:none; -webkit-user-select:none; }
+    .photo-row { display:flex; gap:4px; margin-bottom:4px; }
+    .photo { position:relative; overflow:hidden; cursor:pointer; border-radius:3px; background:#f1f3f4; flex-shrink:0; }
+    .photo img { width:100%; height:100%; object-fit:cover; display:block; transition:filter .15s; }
+    .photo video { width:100%; height:100%; object-fit:cover; display:block; }
+    .photo:hover img { filter:brightness(.88); }
+    .photo .vid-badge { position:absolute; bottom:6px; right:6px; width:18px; height:18px; color:#fff; filter:drop-shadow(0 1px 2px rgba(0,0,0,.5)); }
+
+    /* Custom scrollbar (M3 style, tipis rounded) */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--md-outline-variant); border-radius: 8px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--md-outline); }
+    ::-webkit-scrollbar-corner { background: transparent; }
+    * { scrollbar-width: thin; scrollbar-color: var(--md-outline-variant) transparent; }
+
+    /* Lightbox */
+    .lightbox { position:fixed; inset:0; background:#131314; z-index:200; display:none; flex-direction:column; }
+    .lightbox.open { display:flex; }
+    .lb-top { height:56px; display:flex; align-items:center; padding:0 8px; gap:4px; color:#e3e3e3; }
+    .lb-top .icon-btn { color:#e3e3e3; }
+    .lb-top .icon-btn:hover { background:rgba(255,255,255,.1); }
+    .lb-name { font-size:14px; color:#9aa0a6; margin-left:8px; }
+    .lb-stage { flex:1; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
+    .lb-stage img, .lb-stage video { max-width:100%; max-height:100%; outline:none; object-fit:contain; }
+    .lb-nav { position:absolute; top:50%; transform:translateY(-50%); width:48px; height:48px; border-radius:50%; border:none; background:transparent; color:#e3e3e3; cursor:pointer; display:grid; place-items:center; }
+    .lb-nav:hover { background:rgba(255,255,255,.1); }
+    .lb-nav.prev { left:12px; } .lb-nav.next { right:12px; }
+/* Year scrubber (Google Photos style) */
+.year-scrubber { position:fixed; right:10px; top:50%; transform:translateY(-50%); z-index:50; display:none; flex-direction:column; gap:2px; align-items:flex-end; }
+.year-scrubber.show { display:flex; }
+.year-scrubber .yr-group { display:flex; flex-direction:column; align-items:flex-end; }
+.year-scrubber .yr { border:none; background:transparent; color:var(--md-on-surface-variant); font:500 12px 'Plus Jakarta Sans',sans-serif; padding:3px 10px; border-radius:12px; cursor:pointer; position:relative; }
+.year-scrubber .yr:hover { background:var(--md-surface-container-high); color:var(--md-on-surface); }
+.year-scrubber .yr.active { background:var(--md-primary); color:var(--md-on-primary); }
+.year-scrubber .yr-months { display:none; flex-direction:column; align-items:flex-end; margin:2px 0 4px; }
+.year-scrubber .yr-group.active .yr-months { display:flex; }
+.year-scrubber .mo { border:none; background:transparent; color:var(--md-on-surface-variant); font:400 10px 'Plus Jakarta Sans',sans-serif; padding:2px 10px; border-radius:10px; cursor:pointer; }
+.year-scrubber .mo:hover { background:var(--md-surface-container-high); color:var(--md-on-surface); }
+
+    /* Files Explorer */
+    .crumbs { display:flex; align-items:center; gap:2px; flex-wrap:wrap; padding:8px 0; font-size:14px; }
+    .crumb { padding:6px 10px; border-radius:var(--shape-full); cursor:pointer; color:var(--md-on-surface-variant); background:transparent; border:none; font-family:inherit; font-size:14px; }
+    .crumb:hover { background:var(--md-surface-container-high); }
+    .crumb:last-child { color:var(--md-on-surface); font-weight:500; }
+    .crumb-sep { color:var(--md-outline); font-size:18px; }
+    .explorer-toolbar { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--md-outline-variant); }
+    .view-toggle { width:36px; height:36px; border:none; background:transparent; border-radius:var(--shape-full); cursor:pointer; display:grid; place-items:center; color:var(--md-on-surface-variant); }
+    .view-toggle:hover { background:var(--md-surface-container-high); }
+    .view-toggle.active { background:var(--md-primary-container); color:var(--md-on-primary-container); }
+    .file-list { padding:8px 0; user-select:none; -webkit-user-select:none; }
+    /* details view */
+    .frow { display:flex; align-items:center; gap:12px; padding:8px 12px; border-radius:0; cursor:pointer; font-size:14px; }
+    .frow:hover { background:var(--md-surface-container); }
+    .frow.selected { background:var(--md-primary-container); box-shadow:inset 3px 0 0 var(--md-primary); }
+    .frow input[type=checkbox] { width:18px; height:18px; accent-color:var(--md-primary); cursor:pointer; flex-shrink:0; }
+    .frow .msr { font-size:22px; color:var(--md-on-surface-variant); flex-shrink:0; }
+    .frow .fname { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .frow .fmeta { color:var(--md-on-surface-variant); font-size:13px; flex-shrink:0; }
+    .frow input[type=checkbox] { width:16px; height:16px; accent-color:var(--md-primary); }
+    /* explorer details header (sortable columns) */
+    .fhead { border-bottom:1px solid var(--md-outline-variant); border-radius:0; user-select:none; font-size:12px; color:var(--md-on-surface-variant); }
+    .fhead:hover { background:transparent; }
+    .fsort { cursor:pointer; }
+    .fsort:hover { color:var(--md-primary); }
+    /* grid view */
+    .file-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:12px; padding:12px 0; user-select:none; -webkit-user-select:none; }
+    .fcard { display:flex; flex-direction:column; align-items:center; gap:8px; padding:16px 8px; border-radius:0; cursor:pointer; text-align:center; font-size:12px; border:2px solid transparent; }
+    .fcard:hover { background:var(--md-surface-container); }
+    .fcard.selected { border-color:var(--md-primary); background:var(--md-primary-container); box-shadow:0 0 0 2px var(--md-primary); }
+    .fcard input[type=checkbox] { width:18px; height:18px; accent-color:var(--md-primary); cursor:pointer; }
+    .fcard .msr { font-size:44px; color:var(--md-on-surface-variant); }
+    .fcard .fname { width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .fcard .fmeta { color:var(--md-on-surface-variant); font-size:11px; }
+
+    /* Dialog */
+    .dialog-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:300; display:flex; align-items:center; justify-content:center; }
+    .dialog { background:var(--md-surface); border-radius:var(--shape-xl); padding:24px; width:min(420px, 90vw); box-shadow:var(--md-shadow-2); }
+    .opt { display:flex; align-items:center; gap:14px; width:100%; padding:14px 16px; margin-bottom:8px; border:none; background:var(--md-surface-container); border-radius:var(--shape-md); cursor:pointer; font-family:inherit; font-size:14px; color:var(--md-on-surface); transition:background .15s; }
+    .opt:hover { background:var(--md-surface-container-high); }
+
+    /* Sync */
+    .sync-btn { height:40px; padding:0 24px; border:none; border-radius:20px; background:var(--gp-blue); color:#fff; font-size:14px; font-weight:500; font-family:inherit; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:box-shadow .15s,background .15s; }
+    .sync-btn:hover { box-shadow:0 1px 3px rgba(60,64,67,.3); }
+    .sync-btn:disabled { background:var(--md-surface-container-high); color:#9aa0a6; cursor:default; box-shadow:none; }
+    .status-chip { display:flex; align-items:center; gap:8px; font-size:14px; color:var(--md-on-surface-variant); }
+    .dot { width:10px; height:10px; border-radius:50%; background:var(--md-outline); transition:background .2s; }
+    .dot.ok { background:#1e8e3e; } .dot.busy { background:#f9ab00; animation:pulse 1.2s infinite; }
+    @keyframes pulse { 50% { opacity:.4; } }
+    .progress-track { height:4px; background:var(--md-surface-container-high); border-radius:2px; overflow:hidden; margin:8px 0; }
+    .progress-fill { height:100%; background:var(--gp-blue); transition:width .3s ease; }
+    .sync-log { background:var(--md-surface-container); border:1px solid var(--md-outline-variant); border-radius:12px; padding:12px; height:140px; overflow-y:auto; font-family:'JetBrains Mono',monospace; font-size:12px; color:#137333; display:none; }
+
+    /* Dashboard M3 */
+    .dash-header { margin-bottom:24px; }
+    .dash-header h2 { margin:0; font-size:22px; font-weight:400; color:var(--md-on-surface); }
+    .dash-header p { margin:4px 0 0; font-size:13px; color:var(--md-on-surface-variant); }
+    .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; max-width:1200px; }
+    .card { background:var(--md-surface-container-low); border-radius:20px; padding:20px; transition:box-shadow .2s,transform .2s; border:1px solid var(--md-outline-variant); }
+    .card:hover { box-shadow:var(--md-shadow-1); transform:translateY(-2px); }
+    .card .card-top { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+    .card .card-icon { width:40px; height:40px; border-radius:12px; background:var(--md-primary-container); color:var(--md-primary); display:flex; align-items:center; justify-content:center; }
+    .card .label { font-size:12px; color:var(--md-on-surface-variant); font-weight:500; letter-spacing:.3px; text-transform:uppercase; }
+    .card .card-top .label { font-size:16px; text-transform:none; letter-spacing:0; font-weight:600; }
+    .card .value { font-size:30px; font-weight:400; color:var(--md-on-surface); line-height:1.1; }
+    .card .sub { font-size:11px; color:var(--md-on-surface-variant); margin-top:4px; }
+    .dash-section { margin-top:28px; max-width:1200px; }
+    .dash-section h3 { display:flex; align-items:center; gap:8px; font-size:15px; font-weight:500; color:var(--md-on-surface); margin:0 0 14px; }
+    .dash-section h3 .msr { color:var(--md-primary); font-size:20px; }
+    .panel { background:var(--md-surface-container-low); border:1px solid var(--md-outline-variant); border-radius:20px; padding:20px; }
+    /* di dalam Nothing region: panel ikut gaya Nothing (glass + hairline) */
+    [data-nothing] .panel { background:var(--n-glass); backdrop-filter:blur(14px); border:1px solid var(--n-glass-brd); border-radius:8px; color:var(--n-primary); }
+    [data-nothing] .panel * { color:var(--n-primary); }
+    .year-row { display:flex; align-items:center; gap:14px; margin-bottom:12px; }
+    .year-row:last-child { margin-bottom:0; }
+    .year-label { width:44px; font-size:13px; font-weight:500; color:var(--md-on-surface-variant); }
+    .year-bar-track { flex:1; height:24px; background:var(--md-surface-container); border-radius:8px; overflow:hidden; display:flex; align-items:center; }
+    .year-bar { height:16px; background:linear-gradient(90deg, var(--md-primary), #6aa3e8); border-radius:4px; margin-left:4px; transition:width .5s cubic-bezier(.2,0,0,1); }
+    .year-count { width:52px; text-align:right; font-size:13px; color:var(--md-on-surface-variant); font-variant-numeric:tabular-nums; }
+    .hist-item { display:flex; align-items:center; gap:14px; padding:12px 16px; background:var(--md-surface-container-low); border:1px solid var(--md-outline-variant); border-radius:16px; transition:background .15s; }
+    .hist-item:hover { background:var(--md-surface-container); }
+    .hist-icon { width:38px; height:38px; border-radius:50%; background:var(--md-primary-container); color:var(--md-primary); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .hist-item.ok .hist-icon { background:var(--md-primary-container); }
+    .hist-item.warn .hist-icon { background:#fde293; color:#7a5900; }
+    .hist-title { font-size:13px; font-weight:500; color:var(--md-on-surface); }
+    .hist-sub { font-size:12px; color:var(--md-on-surface-variant); margin-top:2px; }
+    .hist-badge { font-size:11px; font-weight:500; padding:3px 10px; border-radius:8px; }
+    .hist-badge.ok { background:var(--md-primary-container); color:var(--md-on-primary-container); }
+    .hist-badge.warn { background:var(--md-secondary-container); color:var(--md-on-secondary-container); }
+    .dash-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    @media (max-width:900px) { .dash-grid { grid-template-columns:1fr; } }
+    .device-card { display:flex; align-items:center; gap:14px; }
+    .device-avatar { width:48px; height:48px; border-radius:50%; background:var(--md-primary); color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  </style>
+<style>
+  /* ===== Nothing UI (Apps pages) ===== */
+  .nui { font-family: var(--n-f-mono); }
+
+  /* ===== Free Up Space (full page, Nothing UI) ===== */
+  .fu-folders { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:6px; margin-bottom:16px; }
+  .fu-folder { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--n-raised);
+               border:1px solid var(--n-line); cursor:pointer; transition:border-color .15s; user-select:none; -webkit-user-select:none; }
+  .fu-folder:hover { border-color:var(--n-line-2); }
+  .fu-folder.active { border-color:var(--n-accent,#D71921); }
+  .fu-folder input { width:16px; height:16px; accent-color:var(--n-accent,#D71921); flex-shrink:0; cursor:pointer; }
+  .fu-folder .msr { font-size:18px; color:var(--n-secondary); }
+  .fu-nm { flex:1; min-width:0; font-family:var(--n-f-mono); font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--n-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .fu-folder > .fu-nm { cursor:pointer; }
+  .fu-note { font-family:var(--n-f-mono); font-size:11px; letter-spacing:.06em; color:var(--n-accent,#D71921); }
+  .fu-cov { font-family:var(--n-f-mono); font-size:11px; padding:2px 6px; letter-spacing:.06em; flex-shrink:0; }
+  .fu-cov.cov-full { color:oklch(0.62 0.13 165); border:1px solid oklch(0.62 0.13 165); }
+  .fu-cov.cov-part { color:var(--n-accent,#D71921); border:1px solid var(--n-accent,#D71921); }
+  .fu-folder .fu-sz { font-family:var(--n-f-mono); font-size:11px; color:var(--n-secondary); flex-shrink:0; }
+  .fu-lvl { font-family:var(--n-f-mono); font-size:11px; letter-spacing:.12em; color:var(--n-secondary); margin:0 0 8px; text-transform:uppercase; }
+  .fu-badge { color:var(--n-accent,#D71921); letter-spacing:.1em; margin-left:6px; }
+  .fu-split { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; }
+  @media (max-width:900px){ .fu-split { grid-template-columns:minmax(0, 1fr); } }
+  .fu-explorer { background:var(--n-raised); border:1px solid var(--n-line); display:flex; flex-direction:column; min-width:0; }
+  .fu-exp-title { display:flex; align-items:center; gap:8px; padding:9px 12px; border-bottom:1px solid var(--n-line);
+                  font-family:var(--n-f-mono); font-size:10px; font-weight:600; letter-spacing:.1em; color:var(--n-primary); }
+  .fu-src { margin-left:auto; font-size:10px; color:var(--n-muted); letter-spacing:.06em; text-align:right; }
+  .fu-exp-title { justify-content:space-between; gap:8px; }
+  .fu-crumbs { display:flex; align-items:center; gap:4px; padding:7px 12px; border-bottom:1px solid var(--n-line);
+               font-family:var(--n-f-mono); font-size:10px; color:var(--n-secondary); flex-wrap:wrap; }
+  .fu-cr { cursor:pointer; padding:2px 6px; letter-spacing:.06em; }
+  .fu-cr:hover { color:var(--n-primary); background:var(--n-line); }
+  .fu-cr.here { color:var(--n-primary); background:var(--n-line); cursor:default; }
+  .fu-sep { color:var(--n-muted); }
+  .fu-toolbar { display:flex; align-items:center; gap:6px; padding:7px 12px; border-bottom:1px solid var(--n-line); }
+  .fu-chip { font-family:var(--n-f-mono); font-size:11px; letter-spacing:.08em; padding:5px 12px; border:1px solid var(--n-line-2);
+             background:transparent; color:var(--n-secondary); cursor:pointer; text-transform:uppercase; }
+  .fu-chip:hover { color:var(--n-primary); border-color:var(--n-secondary); }
+  .fu-chip.on-all, .fu-chip.on-b, .fu-chip.on-unb { background:var(--n-display); color:var(--n-bg); border-color:var(--n-display); }
+  .fu-selectall { margin-left:auto; font-family:var(--n-f-mono); font-size:11px; letter-spacing:.08em; padding:5px 12px;
+                  border:1px solid var(--n-accent,#D71921); color:var(--n-accent,#D71921); background:transparent; cursor:pointer; text-transform:uppercase; }
+  .fu-selectall:hover { background:var(--n-accent,#D71921); color:#fff; }
+  .fu-exp-head { display:flex; gap:10px; padding:6px 12px; border-bottom:1px solid var(--n-line);
+                 font-family:var(--n-f-mono); font-size:10px; letter-spacing:.1em; color:var(--n-secondary); }
+  .fu-c-nm { flex:1; min-width:0; } .fu-c-sz { width:70px; text-align:right; } .fu-c-st { width:96px; text-align:center; }
+  /* header sejajar row: kompensasi lebar checkbox+ikon (14+15px + 2 gap 10px) */
+  .fu-exp-head { padding-left:29px; padding-right:22px; }
+  .fu-list { max-height:300px; overflow-y:auto; }
+  .fu-frow { display:flex; align-items:center; gap:10px; padding:6px 12px; border-bottom:1px solid var(--n-line); font-size:12px; min-width:0; }
+  .fu-frow:hover { background:var(--n-line); }
+  .fu-frow .msr { font-size:15px; color:var(--n-muted); flex-shrink:0; }
+  .fu-frow input { width:14px; height:14px; accent-color:var(--n-accent,#D71921); flex-shrink:0; cursor:pointer; }
+  .fu-frow .fu-nm { cursor:default; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-transform:uppercase; }
+  .fu-frow .fu-nm.fu-click { cursor:pointer; }
+  .fu-frow .fu-nm.fu-click:hover { color:var(--n-accent,#D71921); }
+  .fu-frow.unb input { visibility:hidden; }
+  .fu-frow.unb .fu-nm { color:var(--n-accent,#D71921); }
+  .fu-frow.hdd-del { opacity:.45; }
+  .fu-frow .fu-sz { font-family:var(--n-f-mono); font-size:10px; color:var(--n-secondary); width:70px; text-align:right; flex-shrink:0; }
+  .fu-st { width:96px; text-align:center; flex-shrink:0; }
+  .fu-tag { font-family:var(--n-f-mono); font-size:10px; font-weight:700; padding:2px 7px; letter-spacing:.06em; }
+  /* SAFE/LOSS: fill solid (bukan outline) — SAFE hijau, LOSS merah, font putih */
+  .fu-tag.fu-b { background:oklch(0.62 0.13 165); color:#fff; border:1px solid oklch(0.62 0.13 165); }
+  .fu-tag.fu-unb { background:var(--n-accent,#D71921); color:#fff; border:1px solid var(--n-accent,#D71921); }
+  .fu-tag.fu-part { background:var(--n-accent,#D71921); color:#fff; border:1px dashed var(--n-accent,#D71921); }
+  .fu-tag.fu-type { color:var(--n-secondary); border:1px solid var(--n-line-2); font-weight:400; margin-right:4px; }
+  .fu-tag.fu-safe { background:oklch(0.62 0.13 165); color:#fff; border:1px solid oklch(0.62 0.13 165); }
+  .fu-tag.fu-loss { background:var(--n-accent,#D71921); color:#fff; border:1px solid var(--n-accent,#D71921); }
+  .fu-legend { display:flex; align-items:center; gap:8px; margin-left:auto; font-family:var(--n-f-mono); font-size:10px; letter-spacing:.06em; color:var(--n-secondary); }
+  .fu-banner { display:flex; align-items:center; gap:10px; padding:8px 12px; margin-bottom:10px; border:1px solid var(--n-line); background:var(--n-surface); font-family:var(--n-f-mono); font-size:10px; letter-spacing:.05em; color:var(--n-secondary); }
+  .fu-banner .msr { font-size:16px; color:oklch(0.62 0.13 165); }
+  .fu-preview { margin-top:10px; background:var(--n-raised); border:1px solid var(--n-line); padding:10px; display:flex; gap:12px; align-items:center; }
+  .fu-thumb { width:72px; height:72px; background:var(--n-line); display:flex; align-items:center; justify-content:center; color:var(--n-secondary); font-family:var(--n-f-mono); font-size:11px; flex-shrink:0; }
+  .fu-thumb-img { width:72px; height:72px; object-fit:cover; flex-shrink:0; }
+  .fu-pv-info { flex:1; font-family:var(--n-f-mono); font-size:11px; color:var(--n-primary); min-width:0; }
+  .fu-pv-info b { display:block; font-size:12px; margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .fu-pv-info span { color:var(--n-secondary); font-size:9px; letter-spacing:.06em; }
+  .fu-pv-close { cursor:pointer; color:var(--n-secondary); padding:4px; }
+  .fu-pv-close:hover { color:var(--n-primary); }
+  .fu-warn { margin-top:10px; padding:9px 14px; border:1px solid var(--n-accent,#D71921); font-family:var(--n-f-mono);
+             font-size:10px; letter-spacing:.06em; color:var(--n-accent,#D71921); text-transform:uppercase; }
+  .fu-divider { height:1px; background:var(--n-line); margin:14px 0; }
+  .fu-footer { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .fu-foot-label, .fu-foot-to { font-family:var(--n-f-mono); font-size:10px; letter-spacing:.1em; color:var(--n-secondary); }
+  .fu-select { padding:8px 10px; border:1px solid var(--n-line-2); background:var(--n-raised); color:var(--n-primary); font-family:var(--n-f-mono); font-size:12px; }
+  .fu-count { margin-left:auto; margin-right:12px; font-family:var(--n-f-mono); font-size:11px; letter-spacing:.06em; color:oklch(0.62 0.13 165); }
+  .fu-btn { padding:9px 18px; border:none; font-family:var(--n-f-mono); font-size:11px; letter-spacing:.08em; cursor:pointer; text-transform:uppercase; }
+  /* ===== Year In Review — Nothing UI ===== */
+  .rc-hero { display:flex; align-items:baseline; gap:16px; margin:8px 0 20px; flex-wrap:wrap; }
+  .rc-year { font-family:var(--n-f-head); font-size:64px; font-weight:600; letter-spacing:-.03em; color:var(--n-display); line-height:1; }
+  .rc-year-sub { font-family:var(--n-f-mono); font-size:10px; letter-spacing:.14em; color:var(--n-accent,#D71921); text-transform:uppercase; }
+  .rc-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:0; border:1px solid var(--md-outline-variant); margin-bottom:16px; }
+  .rc-stat { padding:16px 18px; border-right:1px solid var(--md-outline-variant); background:var(--md-surface-container); }
+  .rc-stat:last-child { border-right:none; }
+  .rc-stat-v { font-family:var(--n-f-head); font-size:26px; font-weight:600; color:var(--n-display); line-height:1.1; }
+  .rc-stat-l { font-family:var(--n-f-mono); font-size:9px; letter-spacing:.12em; color:var(--n-secondary); text-transform:uppercase; margin-top:4px; }
+  .rc-sec { border:1px solid var(--md-outline-variant); background:var(--md-surface-container); padding:16px 18px; }
+  .rc-sec-t { font-family:var(--n-f-mono); font-size:10px; letter-spacing:.14em; color:var(--n-primary); text-transform:uppercase; display:flex; align-items:center; gap:8px; margin-bottom:14px; }
+  .rc-sec-t::after { content:""; flex:1; height:1px; background:var(--md-outline-variant); }
+  .rc-sec-t .msr { font-size:16px; color:var(--n-accent,#D71921); }
+  .rc-bar { display:flex; align-items:flex-end; gap:3px; height:110px; }
+  .rc-bar-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:5px; height:100%; justify-content:flex-end; }
+  .rc-bar-v { font-family:var(--n-f-mono); font-size:9px; color:var(--n-secondary); font-variant-numeric:tabular-nums; }
+  .rc-bar-b { width:100%; background:var(--n-display); transition:height .4s cubic-bezier(.2,0,0,1); }
+  .rc-bar-b.peak { background:var(--n-accent,#D71921); }
+  .rc-bar-m { font-family:var(--n-f-mono); font-size:8px; letter-spacing:.06em; color:var(--n-muted); text-transform:uppercase; }
+  .rc-row { display:flex; align-items:center; gap:12px; padding:9px 0; border-bottom:1px solid var(--md-outline-variant); }
+  .rc-row:last-child { border-bottom:none; }
+  .rc-row-n { font-family:var(--n-f-mono); font-size:10px; color:var(--n-accent,#D71921); width:20px; flex-shrink:0; }
+  .rc-row-nm { flex:1; min-width:0; font-family:var(--n-f-mono); font-size:12px; color:var(--n-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rc-row-v { font-family:var(--n-f-mono); font-size:10px; color:var(--n-secondary); font-variant-numeric:tabular-nums; flex-shrink:0; }
+  .rc-empty { font-family:var(--n-f-mono); font-size:10px; letter-spacing:.1em; color:var(--n-muted); text-transform:uppercase; padding:12px 0; }
+  .rc-years { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px; }
+  .rc-yr { font-family:var(--n-f-mono); font-size:11px; letter-spacing:.1em; padding:7px 16px; border:1px solid var(--md-outline-variant); background:transparent; color:var(--n-secondary); cursor:pointer; text-transform:uppercase; transition:all .15s; }
+  .rc-yr:hover { border-color:var(--n-primary); color:var(--n-primary); }
+  .rc-yr.sel { background:var(--n-display); color:var(--n-bg); border-color:var(--n-display); }
+  .fu-ghost { background:transparent; border:1px solid var(--n-line-2); color:var(--n-primary); }
+  .fu-ghost:hover { background:var(--n-raised); }
+  .fu-primary { background:var(--n-accent,#D71921); color:#fff; }
+  .fu-primary:disabled { background:var(--n-line-2); color:var(--n-muted); cursor:default; }
+  .nui-header { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+  .nui-back { width:40px; height:40px; border:1px solid var(--md-outline-variant); background:transparent; color:var(--n-secondary); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .nui-back:hover { border-color:var(--n-accent,#D71921); color:var(--n-accent,#D71921); }
+  .nui-title { font-family:var(--n-f-head); font-size:28px; font-weight:600; letter-spacing:-.01em; color:var(--n-display); margin:0; }
+  .nui-sub { font-size:10px; text-transform:uppercase; letter-spacing:.14em; color:var(--n-secondary); margin:4px 0 0; }
+  .nui-box { border:1px solid var(--md-outline-variant); background:var(--md-surface-container); }
+  .nui-label { font-size:14px; text-transform:uppercase; letter-spacing:.12em; color:var(--md-on-surface); font-weight:600; }
+  .nui-input { width:100%; box-sizing:border-box; padding:14px 16px; border:none; border-bottom:1px solid var(--md-outline-variant); background:transparent; color:var(--md-on-surface); font-family:var(--n-f-mono); font-size:14px; outline:none; }
+  .nui-input:focus { border-bottom-color:var(--n-accent,#D71921); }
+  .nui-input::placeholder { color:var(--n-secondary); opacity:.6; }
+  .nui-opt { border:1px solid var(--md-outline-variant); background:transparent; padding:14px 12px; cursor:pointer; text-align:left; font-family:var(--n-f-mono); transition:border-color .15s, background .15s; }
+  .nui-opt:hover { border-color:var(--md-on-surface); }
+  .nui-opt.sel { border-color:var(--n-accent,#D71921); background:color-mix(in srgb, var(--n-accent,#D71921) 6%, transparent); }
+  .nui-opt.sel .nui-opt-name { color:var(--n-accent,#D71921); }
+  .nui-opt-name { font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--md-on-surface); }
+  .nui-opt-sub { font-size:10px; color:var(--n-secondary); margin-top:4px; letter-spacing:.06em; }
+  .nui-btn { border:none; background:var(--n-display); color:var(--n-bg); font-family:var(--n-f-mono); font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; padding:14px 24px; cursor:pointer; transition:opacity .15s; }
+  .nui-btn:hover { opacity:.85; }
+  .nui-btn.ghost { background:transparent; color:var(--md-on-surface); border:1px solid var(--md-outline-variant); }
+  .nui-btn.ghost:hover { border-color:var(--n-accent,#D71921); color:var(--n-accent,#D71921); }
+  .nui-btn.accent { background:var(--n-accent,#D71921); color:#fff; }
+  /* Device Overview: kartu CTA besar (Backup / Free Up Space) */
+  .dev-cta { border:1px solid var(--n-line-2); background:var(--n-bg); padding:20px 22px; cursor:pointer; transition:border-color .15s ease-in-out, transform .15s ease-in-out; }
+  .dev-cta:hover { border-color:var(--n-primary); transform:translateY(-2px); }
+  .dev-cta:hover .msr.arrow { transform:translateX(4px); }
+  .nui-num { width:110px; padding:12px; border:1px solid var(--md-outline-variant); background:transparent; color:var(--md-on-surface); font-family:var(--n-f-mono); font-size:13px; outline:none; }
+  .nui-num:focus { border-color:var(--n-accent,#D71921); }
+  .nui-row { display:flex; align-items:center; gap:14px; padding:12px 4px; border-bottom:1px solid var(--md-outline-variant); font-size:12px; }
+  .nui-row:last-child { border-bottom:none; }
+
+  /* ===== NIGIRO.MC polish ===== */
+  .mc-pane { animation:mcFadeIn .25s cubic-bezier(.2,0,0,1); border-radius:4px; }
+  @keyframes mcFadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+  .mc-section-title { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+  .mc-section-title .nui-label { flex-shrink:0; }
+  .mc-section-title::after { content:""; flex:1; height:1px; background:var(--md-outline-variant); }
+  .mc-status-dot { width:7px; height:7px; border-radius:50%; display:inline-block; margin-right:6px; vertical-align:1px; }
+  .mc-status-dot.on { background:#1e8e3e; box-shadow:0 0 6px #1e8e3e88; animation:mcPulse 2s infinite; }
+  .mc-status-dot.off { background:var(--md-outline); }
+  .mc-status-dot.warn { background:#f9ab00; }
+  @keyframes mcPulse { 0%,100% { opacity:1; } 50% { opacity:.5; } }
+  .mc-stat { display:flex; flex-direction:column; gap:2px; padding:14px 18px; background:var(--n-raised); border-radius:8px; min-width:110px; }
+  .mc-stat b { font-family:var(--n-f-mono); font-size:20px; font-weight:700; color:var(--n-primary); }
+  .mc-stat span { font-size:9px; text-transform:uppercase; letter-spacing:.1em; color:var(--n-secondary); }
+  .mc-nav .badge { margin-left:auto; background:var(--n-accent,#D71921); color:#fff; font-size:9px; font-family:var(--n-f-mono); padding:2px 7px; border-radius:10px; font-weight:700; }
+  .mc-sidebar.collapsed .mc-nav .badge { display:none; }
+  .nui-row:hover { background:color-mix(in srgb, var(--md-on-surface) 3%, transparent); }
+  .mc-console-line { padding:1px 0; }
+  .mc-console-line.err { color:var(--n-accent,#D71921); }
+  .mc-console-line.info { color:var(--n-secondary); }
+  .nui-row:hover { background:color-mix(in srgb, var(--md-on-surface) 3%, transparent); }
+  .nui-row-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--md-on-surface); }
+  .nui-row-meta { font-size:10px; color:var(--n-secondary); letter-spacing:.08em; }
+  .nui-row a, .nui-row .act { color:var(--n-secondary); text-decoration:none; cursor:pointer; font-size:16px; }
+  .nui-row a:hover, .nui-row .act:hover { color:var(--n-accent,#D71921); }
+  .nui-empty { font-size:11px; color:var(--n-secondary); letter-spacing:.1em; text-transform:uppercase; padding:16px 4px; }
+  .nui-filelist { display:flex; flex-direction:column; gap:8px; }
+  .nui-filelist .nui-filegroup { max-height:calc(5 * 52px + 8px); overflow-y:auto; padding-right:4px; }
+  /* list besar di panel app: scroll sendiri, max ~6 card terlihat */
+  .nui-filelist.mc-scroll { max-height:calc(6 * 92px + 24px); overflow-y:auto; padding-right:4px; }
+  /* ===== NIGIRO.MC — console ala OPanel antarmuka (Nothing-style) ===== */
+  .mc-log { font-family:var(--n-f-mono); font-size:11px; background:var(--n-raised); border:1px solid var(--n-line); border-radius:8px; padding:10px 14px; height:320px; overflow-y:auto; white-space:pre-wrap; word-break:break-word; line-height:1.5; scrollbar-width:thin; }
+  .mc-log p { margin:0; padding:0 4px; border-radius:2px; color:var(--n-primary); }
+  .mc-log p:hover { background:var(--n-glass); }
+  .mc-log .ts { color:oklch(0.62 0.17 254); }                       /* timestamp biru (opanel) */
+  .mc-log .lv-info { color:oklch(0.55 0.16 150); }                  /* INFO hijau */
+  .mc-log .lv-warn { color:oklch(0.68 0.15 85); }                   /* WARN kuning */
+  .mc-log .lv-error { color:oklch(0.6 0.21 25); }                   /* ERROR merah */
+  .mc-log .lv-other { color:var(--n-secondary); }
+  .mc-log .src { color:oklch(0.62 0.13 165); }                      /* source emerald */
+  .mc-log .msg { color:var(--n-primary); }
+  .mc-chip { font-family:var(--n-f-mono); font-size:10px; text-transform:uppercase; letter-spacing:.06em; padding:5px 10px; border:1px solid var(--n-line); background:transparent; color:var(--n-secondary); border-radius:4px; cursor:pointer; transition:background .12s,color .12s; }
+  .mc-chip:hover { background:var(--n-raised); color:var(--n-primary); }
+  .mc-chip.active { background:var(--n-display,#fff); color:var(--n-bg,#000); border-color:var(--n-display,#fff); }
+  /* badge status dot + kartu dashboard (opanel pola) */
+  .mc-badge { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--n-line); border-radius:6px; padding:3px 10px; font-family:var(--n-f-mono); font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--n-primary); }
+  .mc-dot { width:8px; height:8px; border-radius:50%; background:var(--n-secondary); display:inline-block; }
+  .mc-dot.on { background:oklch(0.55 0.17 150); }
+  .mc-dot.warn { background:oklch(0.68 0.15 85); }
+  .mc-dot.off { background:oklch(0.55 0.21 25); }
+  body.light .mc-log .ts { color:oklch(0.5 0.19 254); }
+  body.light .mc-log .lv-info { color:oklch(0.5 0.15 150); }
+  body.light .mc-log .lv-warn { color:oklch(0.6 0.14 85); }
+  body.light .mc-log .lv-error { color:oklch(0.55 0.21 25); }
+  .nui-filelist.mc-scroll::-webkit-scrollbar { width:6px; }
+  .nui-filelist.mc-scroll::-webkit-scrollbar-thumb { background:var(--md-outline-variant); border-radius:3px; }
+  .nui-filelist .nui-filegroup::-webkit-scrollbar { width:6px; }
+  .nui-filelist .nui-filegroup::-webkit-scrollbar-thumb { background:var(--md-outline-variant); border-radius:3px; }
+  .nui-led { display:flex; gap:3px; margin-top:10px; align-items:center; }
+  .nui-led i { flex:1; height:14px; background:var(--md-surface-container-high); }
+  /* LED pill untuk status device hub — dot kecil, bukan bar */
+  .nui-led.pill { gap:0; margin:0; }
+  .nui-led.pill i { flex:none; width:8px; height:8px; border-radius:50%; background:var(--md-outline-variant); }
+  .nui-led.pill i.on { background:oklch(0.62 0.13 165); }
+  .nui-pick { display:flex; flex-wrap:wrap; gap:0; }
+  .nui-pick label { display:flex; align-items:center; gap:8px; padding:10px 14px; border:1px solid var(--md-outline-variant); border-left:none; font-size:11px; letter-spacing:.06em; cursor:pointer; color:var(--md-on-surface); }
+  .nui-pick label:first-child { border-left:1px solid var(--md-outline-variant); }
+  .nui-pick label:has(input:checked) { background:var(--n-display); color:var(--n-bg); font-weight:700; }
+  .nui-pick input { display:none; }
+  .nui-card { border:1px solid var(--md-outline-variant); background:var(--md-surface-container); padding:20px; cursor:pointer; transition:border-color .15s; }
+  .nui-card:hover { border-color:var(--n-display); }
+  .nui-card h3 { font-family:var(--n-f-head); font-size:15px; font-weight:700; margin:12px 0 4px; color:var(--n-display); }
+  .nui-card p { margin:0; font-size:11px; color:var(--n-secondary); letter-spacing:.04em; line-height:1.5; }
+  .nui-card .ic { font-size:28px; color:var(--n-display); }
+  .nui-card.disabled { opacity:.35; cursor:default; }
+
+  /* ===== Settings — Nothing UI ===== */
+  .set-h3 { display:flex; align-items:center; gap:10px; font-family:var(--n-f-mono); font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--n-secondary); margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--n-line); }
+  .set-h3 .msr { font-size:18px; color:var(--n-display); }
+  .dash-section { margin-bottom:34px; }
+  .set-label { display:block; font-family:var(--n-f-mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--n-secondary); margin-bottom:5px; }
+  .set-note { font-family:var(--n-f-mono); font-size:11px; letter-spacing:.04em; color:var(--n-secondary); }
+  .set-tree { max-height:220px; overflow-y:auto; border:1px solid var(--n-line-2); padding:8px; margin-bottom:4px; font-size:13px; min-height:60px; font-family:var(--n-f-mono); }
+  .set-card { border:1px solid var(--n-line-2); background:var(--n-bg); padding:0; }
+  .set-row { display:flex; align-items:center; gap:12px; padding:12px 18px; border-bottom:1px solid var(--n-line); }
+  .set-row:last-child { border-bottom:none; }
+  .set-row .msr { font-size:18px; color:var(--n-secondary); flex-shrink:0; }
+  .set-row-name { font-family:var(--n-f-mono); font-size:12px; font-weight:600; color:var(--n-primary); }
+  .set-row-sub { font-family:var(--n-f-mono); font-size:10px; letter-spacing:.04em; color:var(--n-secondary); word-break:break-all; }
+  .set-badge { display:inline-block; font-family:var(--n-f-mono); font-size:9px; font-weight:700; letter-spacing:.1em; padding:2px 7px; }
+  .set-btn-ghost { font-family:var(--n-f-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; padding:6px 12px; border:1px solid var(--n-line-2); background:transparent; color:var(--n-primary); cursor:pointer; transition:all .12s; }
+  .set-btn-ghost:hover { border-color:var(--n-primary); }
+  .set-btn-ghost.danger:hover { border-color:var(--n-accent,#D71921); color:var(--n-accent,#D71921); }
+  .set-bar { flex:1; height:6px; background:var(--n-line); overflow:hidden; position:relative; }
+  .set-bar > div { position:absolute; inset:0; right:auto; transition:width .3s; }
+  .set-input-num { width:90px; padding:8px 12px; border:1px solid var(--n-line-2); background:transparent; color:var(--n-primary); font-family:var(--n-f-mono); font-size:12px; outline:none; }
+  .set-input-num:focus { border-color:var(--n-accent,#D71921); }
+  .nui-dropzone { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; border:1px dashed var(--md-outline-variant); cursor:pointer; transition:border-color .15s, background .15s; text-align:center; }
+  .nui-dropzone:hover, .nui-dropzone.drag { border-color:var(--n-accent,#D71921); background:color-mix(in srgb, var(--n-accent,#D71921) 4%, transparent); }
+  .nui-dot { color:var(--n-accent,#D71921); }
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <button class="icon-btn" id="menuBtn" title="Menu"><span class="msr">menu</span></button>
+  <div class="brand">
+    <img src="/logo-horizontal.png" alt="NigiroCORE" draggable="false" style="height:40px;width:auto;display:block;user-select:none;-webkit-user-drag:none;pointer-events:none">
+  </div>
+  <div class="searchbar" style="position:relative">
+    <span class="msr" style="color:var(--md-on-surface-variant)">search</span>
+    <!-- Anti-autofill Chrome: Chrome nawarin kredensial localhost ke SEMUA input text di site.
+         Trik definitif: readonly saat blur (Chrome gak nawarin autofill ke readonly), hilang saat focus.
+         Wiring di app.js (searchAntiAutofill). -->
+    <input id="search" type="text" readonly placeholder="Search All Backed-Up Files…" autocomplete="off" name="nigiro-file-search" autocorrect="off" autocapitalize="off" spellcheck="false" role="searchbox" enterkeyhint="search" data-1p-ignore data-lpignore="true" data-form="ignore">
+    <div id="searchResults" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--md-surface-container);border-radius:12px;margin-top:6px;box-shadow:0 4px 16px rgba(0,0,0,.25);max-height:400px;overflow-y:auto;z-index:100"></div>
+  </div>
+  <button class="icon-btn" id="themeBtn" title="Toggle Theme"><span class="msr" id="themeIcon">dark_mode</span></button>
+  <span id="alertBadgeSlot" style="display:flex"></span>
+  <div style="display:flex;align-items:center;gap:8px;cursor:pointer" onclick="openProfileDialog()" title="Active Profile">
+    <div class="avatar" id="profileAvatar" style="margin-left:auto">L</div>
+    <span id="profileName" style="font-family:var(--n-f-mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--n-secondary)"></span>
+  </div>
+</div>
+
+<!-- Profile switcher dialog -->
+<div id="profileDialog" class="dialog-backdrop" style="display:none" onclick="if(event.target===this)closeProfileDialog()">
+  <div class="dialog" style="width:min(420px,92vw)">
+    <h3 style="margin:0 0 4px;font-size:18px;font-weight:500">Switch Profile</h3>
+    <p style="margin:0 0 16px;font-size:13px;color:var(--md-on-surface-variant)">Gallery, Stats, And Backups Are Scoped To The Active Profile.</p>
+    <div id="profileList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="crumb" onclick="closeProfileDialog()">Close</button>
+      <button class="sync-btn" style="min-width:120px" onclick="showAddProfile()">New Profile</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit profile dialog -->
+<div id="editProfileDialog" class="dialog-backdrop" style="display:none" onclick="if(event.target===this)closeEditProfile()">
+  <div class="dialog" style="max-width:420px">
+    <h3 style="margin:0 0 4px;font-size:18px;font-weight:500">Edit Profile</h3>
+    <p style="margin:0 0 16px;font-size:13px;color:var(--md-on-surface-variant)">Renaming Also Moves The Profile Folder On Disk.</p>
+    <input type="hidden" id="editProfId">
+    <label style="display:block;font-size:12px;font-weight:500;margin-bottom:4px">Profile Name</label>
+    <input id="editProfName" placeholder="e.g. Ericko" style="width:100%;box-sizing:border-box;padding:10px 14px;border-radius:12px;border:1px solid var(--md-outline-variant);background:var(--md-surface-container);color:var(--md-on-surface);font:400 14px 'Plus Jakarta Sans',sans-serif;margin-bottom:12px;outline:none">
+    <label style="display:block;font-size:12px;font-weight:500;margin-bottom:4px">Avatar Emoji (Optional — Beats The Initial)</label>
+    <input id="editProfEmoji" placeholder="e.g. 🦁 😎 🌋 (paste any emoji)" style="width:100%;box-sizing:border-box;padding:10px 14px;border-radius:12px;border:1px solid var(--md-outline-variant);background:var(--md-surface-container);color:var(--md-on-surface);font:400 14px 'Plus Jakarta Sans',sans-serif;margin-bottom:12px;outline:none">
+    <label style="display:block;font-size:12px;font-weight:500;margin-bottom:4px">Accent Color</label>
+    <div id="editProfColors" style="display:flex;gap:8px;margin-bottom:16px"></div>
+    <div id="editProfError" style="color:var(--md-error);font-size:12px;min-height:18px;margin-bottom:8px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="crumb" onclick="closeEditProfile()">Cancel</button>
+      <button class="sync-btn" style="min-width:110px" onclick="saveEditProfile()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add profile dialog -->
+<div id="addProfileDialog" class="dialog-backdrop" style="display:none" onclick="if(event.target===this)closeAddProfileDialog()">
+  <div class="dialog" style="max-width:420px">
+    <h3 style="margin:0 0 4px;font-size:18px;font-weight:500">New Profile</h3>
+    <p style="margin:0 0 16px;font-size:13px;color:var(--md-on-surface-variant)">Each Profile Keeps Its Own Gallery, Stats, And Backup History.</p>
+    <label style="display:block;font-size:12px;font-weight:500;margin-bottom:4px">Profile Name</label>
+    <input id="profName" placeholder="e.g. Mom, Dad, Andi" style="width:100%;box-sizing:border-box;padding:10px 14px;border-radius:12px;border:1px solid var(--md-outline-variant);background:var(--md-surface-container);color:var(--md-on-surface);font:400 14px 'Plus Jakarta Sans',sans-serif;margin-bottom:12px;outline:none">
+    <label style="display:block;font-size:12px;font-weight:500;margin-bottom:4px">Accent Color</label>
+    <div id="profColors" style="display:flex;gap:8px;margin-bottom:16px"></div>
+    <div id="profError" style="color:var(--md-error);font-size:12px;min-height:18px;margin-bottom:8px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="crumb" onclick="closeAddProfileDialog()">Cancel</button>
+      <button class="sync-btn" style="min-width:110px" onclick="addProfile()">Create Profile</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sidebar -->
+<nav class="sidebar" id="sidebar">
+  <div class="nav-cat" data-short="MAIN">Main</div>
+  <a class="nav-item active" data-nav="dashboard" onclick="showView('dashboard')">
+    <span class="msr">dashboard</span>
+    <span class="tooltip">Dashboard</span>
+  </a>
+  <div class="nav-cat" data-short="LIB">Library</div>
+  <a class="nav-item" data-nav="photos" onclick="showView('photos')">
+    <span class="msr">photo_library</span>
+    <span class="tooltip">Gallery</span>
+  </a>
+  <a class="nav-item" data-nav="videos" onclick="showView('videos')">
+    <span class="msr">movie</span>
+    <span class="tooltip">Videos</span>
+  </a>
+  <a class="nav-item" data-nav="documents" onclick="showView('documents')">
+    <span class="msr">description</span>
+    <span class="tooltip">Documents</span>
+  </a>
+  <a class="nav-item" data-nav="albums" onclick="showView('albums')">
+    <span class="msr">collections</span>
+    <span class="tooltip">Albums</span>
+  </a>
+  <a class="nav-item" data-nav="favorites" onclick="showView('favorites')">
+    <span class="msr">favorite</span>
+    <span class="tooltip">Favorites</span>
+  </a>
+  <a class="nav-item" data-nav="maps" onclick="showView('maps')">
+    <span class="msr">map</span>
+    <span class="tooltip">Maps</span>
+  </a>
+  <a class="nav-item" data-nav="recap" onclick="showView('recap')">
+    <span class="msr">auto_awesome</span>
+    <span class="tooltip">Year In Review</span>
+  </a>
+  <a class="nav-item" data-nav="archive" onclick="showView('archive')">
+    <span class="msr">archive</span>
+    <span class="tooltip">Archive</span>
+  </a>
+  <div class="nav-cat" data-short="WORK">Workspace</div>
+  <a class="nav-item" data-nav="device" onclick="showView('device')">
+    <span class="msr">smartphone</span>
+    <span class="tooltip">Device</span>
+  </a>
+  <a class="nav-item" data-nav="files" onclick="showView('files')">
+    <span class="msr">folder</span>
+    <span class="tooltip">Files</span>
+  </a>
+  <a class="nav-item" data-nav="apps" onclick="showView('apps')">
+    <span class="msr">apps</span>
+    <span class="tooltip">Apps</span>
+  </a>
+  <div class="nav-manage">
+    <div class="nav-cat" data-short="MNG">Manage</div>
+    <a class="nav-item" data-nav="monitoring" onclick="showView('monitoring')">
+      <span class="msr">monitor_heart</span>
+      <span class="tooltip">Monitoring</span>
+    </a>
+    <a class="nav-item" data-nav="trash" onclick="showView('trash')">
+      <span class="msr">delete</span>
+      <span class="tooltip">Trash</span>
+    </a>
+    <a class="nav-item" data-nav="dupes" onclick="showView('dupes')">
+      <span class="msr">content_copy</span>
+      <span class="tooltip">Find Duplicates</span>
+    </a>
+    <div style="flex:1"></div>
+    <a class="nav-item" data-nav="settings" onclick="showView('settings')">
+      <span class="msr">settings</span>
+      <span class="tooltip">Settings</span>
+    </a>
+    <a class="nav-item nav-signout" onclick="doLogout()" title="Sign Out">
+      <span class="msr">logout</span>
+      <span class="tooltip">Sign Out</span>
+    </a>
+  </div>
+</nav>
+
+<!-- Main -->
+<div class="main" id="main">
+
+  <section id="view-dashboard" data-nothing>
+    <div class="dash-header">
+      <h2 class="n-ttl" style="font-size:32px">Welcome Back, LO</h2>
+      <p id="dash-greeting" class="n-ds" style="margin-top:6px;font-size:13px">Your Backup Summary For Today.</p>
+    </div>
+    <!-- Backup status card (paling atas, style n-card) -->
+    <div class="n-card" id="backupCard" style="padding:18px 20px;margin-top:20px;display:flex;align-items:center;gap:16px">
+      <div style="width:46px;height:46px;border-radius:14px;background:var(--n-raised);display:grid;place-items:center;flex-shrink:0">
+        <span class="msr" id="backupCardIcon" style="font-size:24px;color:var(--n-secondary)">usb</span>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div id="backupCardTitle" style="font-family:var(--n-f-head);font-weight:600;font-size:17px;color:var(--n-display)">No Device</div>
+        <div id="backupCardSub" style="font-family:var(--n-f-mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--n-secondary);margin-top:2px">Connect Via USB Cable</div>
+      </div>
+      <button class="n-btn" id="syncBtn2" onclick="showBackupDialog()" disabled style="flex-shrink:0">
+        <span class="msr" style="font-size:16px;vertical-align:-3px">backup</span> Backup Device
+      </button>
+      <button class="n-btn" id="cleanupBtn" onclick="cleanupOpen()" disabled style="flex-shrink:0;display:none">
+        <span class="msr" style="font-size:16px;vertical-align:-3px">cleaning_services</span> Free Up Space
+      </button>
+      <!-- Free Up Space dihapus dari dashboard atas keputusan LO (fitur masih ada via Device hub) -->
+    </div>
+    <div id="progressWrap" style="display:none">
+      <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:6px">
+        <span id="progressPct" style="font-family:var(--n-f-display);font-variation-settings:'DNAM' 0;font-size:28px;font-weight:600">0%</span>
+        <span id="progressEta" style="font-family:var(--n-f-mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--n-secondary)"></span>
+        <span id="progressCount" style="margin-left:auto;font-size:12px;color:var(--md-on-surface-variant)"></span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progressBar" style="width:0%"></div></div>
+      <pre id="log" class="sync-log"></pre>
+    </div>
+    <div class="dash-section">
+      <h3 style="margin-bottom:12px;font-family:var(--n-f-head);font-weight:600;font-size:20px;color:var(--n-display)"><span class="msr" style="font-size:22px;color:var(--n-secondary);vertical-align:-4px">dns</span> Server</h3>
+      <div class="panel" id="serverInfo" style="padding:14px 18px">
+        <div style="color:var(--n-secondary);font-size:12px">Loading…</div>
+      </div>
+    </div>
+
+    <div class="dash-section">
+      <h3 style="margin-bottom:12px;font-family:var(--n-f-head);font-weight:600;font-size:20px;color:var(--n-display)"><span class="msr" style="font-size:22px;color:var(--n-secondary);vertical-align:-4px">monitor_heart</span> Live</h3>
+      <!-- Live panel (Nothing revamp: pill toggle kiri vertikal + hero graph monokrom + dot merah) -->
+      <div class="n-card" id="livePanel" style="padding:18px 20px">
+        <div style="display:flex;gap:16px;flex-wrap:wrap">
+          <div id="liveList" style="flex:0 0 190px;display:flex;flex-direction:column;gap:6px;align-self:flex-start"></div>
+          <div style="flex:1;min-width:280px">
+            <div id="liveHero" style="display:block">
+            <div style="display:flex;align-items:baseline;justify-content:flex-end;gap:8px;margin-bottom:6px">
+              <span style="font-family:var(--n-f-mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--n-secondary)" id="lg-title"></span>
+              <span id="lg-value" style="font-family:var(--n-f-display);font-variation-settings:'ROND' 100;font-size:40px;line-height:1;color:var(--n-display)"></span>
+            </div>
+            <canvas id="lg-canvas" width="1020" height="300" style="width:100%;height:180px;border-radius:6px;background:var(--n-raised)"></canvas>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--n-secondary);margin-top:8px;font-family:var(--n-f-mono);text-transform:uppercase;letter-spacing:.08em">
+              <span id="lg-min"></span><span id="lg-sub">Last 60 Samples · 5s Interval</span><span id="lg-max"></span>
+            </div>
+            </div>
+            <!-- #13: card per-core CPU + GPU usage, tampil saat pill CPU aktif -->
+            <div id="liveCpuCard" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-section">
+      <h3 style="margin-bottom:12px;font-family:var(--n-f-head);font-weight:600;font-size:20px;color:var(--n-display)"><span class="msr" style="font-size:22px;color:var(--n-secondary);vertical-align:-4px">storage</span> Storage</h3>
+      <div class="cards" id="storageCards"></div>
+    </div>
+
+    <div class="dash-section">
+      <h3 style="margin-bottom:12px;font-family:var(--n-f-head);font-weight:600;font-size:20px;color:var(--n-display)"><span class="msr" style="font-size:22px;color:var(--n-secondary);vertical-align:-4px">photo_library</span> Vault</h3>
+      <div class="cards">
+        <div class="n-card" style="position:relative">
+          <span class="msr" style="position:absolute;top:20px;right:20px;font-size:22px;color:var(--n-secondary)">photo_library</span>
+          <div class="n-label">Total Items</div>
+          <div class="n-metric" style="margin-top:8px"><span id="stat-count">–</span></div>
+          <div class="n-ds" style="margin-top:6px">Files Backed Up</div>
+        </div>
+        <div class="n-card" style="position:relative">
+          <span class="msr" style="position:absolute;top:20px;right:20px;font-size:22px;color:var(--n-secondary)">hard_drive</span>
+          <div class="n-label">Total Size</div>
+          <div class="n-metric" style="margin-top:8px"><span id="stat-size">—</span></div>
+          <div class="n-ds" style="margin-top:6px">In HDD Vault</div>
+        </div>
+        <div class="n-card" style="position:relative">
+          <span class="msr" style="position:absolute;top:20px;right:20px;font-size:22px;color:var(--n-secondary)">image</span>
+          <div class="n-label">Photos</div>
+          <div class="n-metric" style="margin-top:8px"><span id="stat-photos">—</span></div>
+          <div class="n-ds" style="margin-top:6px">JPG, PNG, HEIC</div>
+        </div>
+        <div class="n-card" style="position:relative">
+          <span class="msr" style="position:absolute;top:20px;right:20px;font-size:22px;color:var(--n-secondary)">movie</span>
+          <div class="n-label">Videos</div>
+          <div class="n-metric" style="margin-top:8px"><span id="stat-videos">—</span></div>
+          <div class="n-ds" style="margin-top:6px">MP4, MKV, WEBM</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-section">
+      <h3 style="margin-bottom:12px;font-family:var(--n-f-head);font-weight:600;font-size:20px;color:var(--n-display)"><span class="msr" style="font-size:22px;color:var(--n-secondary);vertical-align:-4px">donut_small</span> Storage Breakdown</h3>
+      <div class="panel" id="breakdown"></div>
+    </div>
+
+    <div class="dash-section" id="quickTools" style="display:none">
+      <button class="sync-btn" style="background:var(--md-surface-container);color:var(--md-on-surface);box-shadow:none;border:1px solid var(--md-outline-variant)" onclick="showTrash()">
+        <span class="msr" style="font-size:18px">delete</span> Trash
+      </button>
+      <button class="sync-btn" style="background:var(--md-surface-container);color:var(--md-on-surface);box-shadow:none;border:1px solid var(--md-outline-variant)" onclick="showDuplicates()">
+        <span class="msr" style="font-size:18px">content_copy</span> Find Duplicates
+      </button>
+      <button class="sync-btn" style="background:var(--md-surface-container);color:var(--md-on-surface);box-shadow:none;border:1px solid var(--md-outline-variant)" onclick="verifyVault()">
+        <span class="msr" style="font-size:18px">verified_user</span> Verify Vault
+      </button>
+    </div>
+
+    <div class="dash-section" id="verifyResult" style="display:none"></div>
+
+    <div class="dash-grid dash-section">
+      <div>
+        <h3 style="margin-bottom:12px;font-family:var(--n-f-head);font-weight:600;font-size:20px;color:var(--n-display)"><span class="msr" style="font-size:22px;color:var(--n-secondary);vertical-align:-4px">bar_chart</span> Items Per Year</h3>
+        <div class="panel" id="stat-years"></div>
+      </div>
+      <div>
+        <h3 style="margin-bottom:12px;font-family:var(--n-f-head);font-weight:600;font-size:20px;color:var(--n-display)"><span class="msr" style="font-size:22px;color:var(--n-secondary);vertical-align:-4px">history</span> Backup History</h3>
+        <div id="history-list" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-photos" style="display:none">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+    <div class="dash-header" style="flex:1">
+      <h2>Gallery</h2>
+      <p style="color:var(--md-on-surface-variant);font-size:13px;margin:4px 0 0">Every Photo And Video You've Backed Up, Grouped By Date.</p>
+    </div>
+      <button class="n-btn" id="resetFilterBtn" style="padding:6px 14px;font-size:12px;display:none" onclick="resetFilters()">
+        <span class="msr" style="font-size:14px;vertical-align:-2px">restart_alt</span> Reset
+      </button>
+      <button class="n-btn" id="filterBtn" style="padding:6px 14px;font-size:12px" onclick="showFilterDialog()">
+        <span class="msr" style="font-size:14px;vertical-align:-2px">tune</span> <span id="filterBtnLabel">Filter</span>
+      </button>
+    </div>
+    <div id="empty" style="display:none;text-align:center;padding:80px 0;color:var(--md-on-surface-variant)">
+      <span class="msr" style="font-size:64px;color:var(--md-outline)">photo_library</span>
+      <p>No Backups Yet. Plug In Your Phone And Press <b>Backup Device</b>.</p>
+    </div>
+    <div id="gallery"></div>
+    <div class="year-scrubber" id="galleryScrubber"></div>
+  </section>
+
+  <!-- Videos view (galeri video only) -->
+  <section id="view-videos" style="display:none">
+    <div class="dash-header">
+      <h2>Videos</h2>
+      <p style="color:var(--md-on-surface-variant);font-size:13px;margin:4px 0 0">All Videos From Your Backups, Ready To Stream.</p>
+    </div>
+    <div id="videos-empty" style="display:none;text-align:center;padding:80px 0;color:var(--md-on-surface-variant)">
+      <span class="msr" style="font-size:64px;color:var(--md-outline)">movie</span>
+      <p>No Videos Backed Up Yet.</p>
+    </div>
+    <div id="videoGallery"></div>
+    <div class="year-scrubber" id="videoScrubber"></div>
+  </section>
+
+  <!-- Files Explorer -->
+  <section id="view-files" style="display:none">
+    <div class="dash-header">
+      <h2>Files</h2>
+      <p style="color:var(--md-on-surface-variant);font-size:13px;margin:4px 0 0">Browse Everything In Your Vault — Documents, Archives, And More.</p>
+    </div>
+    <!-- Breadcrumb -->
+    <div class="crumbs" id="crumbs"></div>
+    <!-- Toolbar: view toggle -->
+    <div class="explorer-toolbar">
+      <button class="view-toggle active" id="vt-details" onclick="setFileView('details')" title="Details">
+        <span class="msr" style="font-size:20px">view_list</span>
+      </button>
+      <button class="view-toggle" id="vt-grid" onclick="setFileView('grid')" title="Grid">
+        <span class="msr" style="font-size:20px">grid_view</span>
+      </button>
+      <label style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--md-on-surface-variant)">
+        <input type="checkbox" id="selAll" onchange="toggleSelectAll(this.checked)"> Select All
+      </label>
+      <select id="sortSel" onchange="renderFiles()">
+        <option value="name">Name</option>
+        <option value="size">Size</option>
+        <option value="date">Date</option>
+      </select>
+      <select id="filterSel" onchange="renderFiles()">
+        <option value="all">All Types</option>
+        <option value="img">Photos</option>
+        <option value="vid">Videos</option>
+        <option value="doc">Documents</option>
+      </select>
+    </div>
+    <!-- File list -->
+    <div id="fileList" class="file-list"></div>
+    <!-- Selection action bar (muncul saat ada item terseleksi) -->
+    <div id="selBar" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--n-display);color:var(--n-bg);padding:10px 16px;border-radius:0;box-shadow:0 8px 32px rgba(0,0,0,.35);display:none;align-items:center;gap:4px;z-index:300;font-family:var(--n-f-mono)">
+      <span id="selCount" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:0 10px"></span>
+      <button class="icon-btn" id="selCopy" title="Copy" style="color:var(--n-bg)"><span class="msr" style="font-size:20px">content_copy</span></button>
+      <button class="icon-btn" id="selCut" title="Cut" style="color:var(--n-bg)"><span class="msr" style="font-size:20px">content_cut</span></button>
+      <button class="icon-btn" id="selPaste" title="Paste" style="color:var(--n-bg)"><span class="msr" style="font-size:20px">content_paste</span></button>
+      <button class="icon-btn" id="selDownload" title="Download As ZIP" style="color:var(--n-bg)"><span class="msr" style="font-size:20px">download</span></button>
+      <button class="icon-btn" id="selDelete" title="Move To Trash" style="color:var(--n-accent,#D71921)"><span class="msr" style="font-size:20px">delete</span></button>
+      <button class="icon-btn" id="selCancel" title="Clear Selection" style="color:var(--n-bg);margin-left:8px"><span class="msr" style="font-size:20px">close</span></button>
+    </div>
+  </section>
+
+  <!-- Apps hub (tool list) -->
+  <section id="view-device" style="display:none">
+    <div class="nui-header nui">
+      <div style="flex:1">
+        <h2 class="nui-title" id="deviceTitle">DEVICE<span class="nui-dot">.</span></h2>
+        <p class="nui-sub" id="deviceSub">Connected Phone — Status, Backup, And Space Management</p>
+      </div>
+    </div>
+    <div style="display:flex;gap:0;margin-bottom:16px;border:1px solid var(--n-line-2);max-width:900px">
+      <button id="devTabOverview" onclick="devTab('overview')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 0;background:var(--n-display);color:var(--n-bg);border:none;font-family:var(--n-f-mono);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;cursor:pointer">
+        <span class="msr" style="font-size:17px;vertical-align:-4px">dashboard</span> Overview
+      </button>
+      <button id="devTabBackup" onclick="devTab('backup')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 0;background:transparent;color:var(--n-primary);border:none;border-left:1px solid var(--n-line-2);font-family:var(--n-f-mono);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;cursor:pointer">
+        <span class="msr" style="font-size:17px;vertical-align:-4px">backup</span> Backup
+      </button>
+      <button id="devTabFreeup" onclick="devTab('freeup')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 0;background:transparent;color:var(--n-primary);border:none;border-left:1px solid var(--n-line-2);font-family:var(--n-f-mono);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;cursor:pointer">
+        <span class="msr" style="font-size:17px;vertical-align:-4px">cleaning_services</span> Free Up Space
+      </button>
+    </div>
+    <div id="devPaneOverview" style="max-width:900px"></div>
+    <div id="devPaneBackup" style="display:none;max-width:900px">
+      <div id="deviceBackupPanel"></div>
+    </div>
+    <div id="devPaneFreeup" style="display:none">
+      <div id="freeupRoot">
+        <p style="color:var(--n-secondary);font-family:var(--n-f-mono);font-size:12px">Scanning Device…</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-apps" style="display:none">
+    <div class="nui-header nui">
+      <div style="flex:1">
+        <h2 class="nui-title">APPS<span class="nui-dot">.</span></h2>
+        <p class="nui-sub">Built-In Tools — More Coming</p>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px" class="nui">
+      <div class="nui-card" onclick="showApp('downloader')">
+        <span class="msr ic">download</span>
+        <h3>NIGIRO.DOWNLOADER</h3>
+        <p>Video &amp; MP3 From YouTube, TikTok, Instagram, X — Dual Engine With Auto Fallback.</p>
+      </div>
+      <div class="nui-card" onclick="showApp('pdf')">
+        <span class="msr ic">picture_as_pdf</span>
+        <h3>NIGIRO.COMPRESS</h3>
+        <p>Compress PDF, Image, And Video To A Target File Size.</p>
+      </div>
+      <div class="nui-card" onclick="showApp('image')">
+        <span class="msr ic">swap_horiz</span>
+        <h3>NIGIRO.CONVERT</h3>
+        <p>Convert Image, Audio, And Video Between Formats.</p>
+      </div>
+      <div class="nui-card" onclick="showApp('mc')">
+        <span class="msr ic">sports_esports</span>
+        <h3>NIGIRO.MC</h3>
+        <p>Minecraft Server Panel — Create, Run, Console, Mods.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- App detail: Minecraft Panel -->
+  <section id="view-app-mc" style="display:none">
+    <div class="nui-header nui">
+      <button class="nui-back" onclick="showView('apps')" title="Back"><span class="msr">arrow_back</span></button>
+      <div style="flex:1">
+        <h2 class="nui-title">NIGIRO.MC<span class="nui-dot">_</span></h2>
+        <p class="nui-sub">Minecraft Server Panel — Phase 1</p>
+      </div>
+    </div>
+    <div class="nui" style="max-width:960px">
+      <div class="mc-topbar">
+        <button class="icon-btn" id="mcMenuBtn" title="Menu"><span class="msr">menu</span></button>
+        <span style="font-family:var(--n-f-mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--n-primary);font-weight:600">NIGIRO.MC</span>
+        <span class="mc-ver"><i></i>PANEL 4</span>
+        <span id="mcTopState" style="font-size:10px;font-family:var(--n-f-mono);color:var(--n-muted);margin-left:auto"></span>
+      </div>
+      <div style="display:flex;gap:14px;align-items:flex-start">
+      <!-- Inner sidebar (pola OPanel: grup Server/Management/Configuration + indikator bar) -->
+      <nav class="mc-sidebar" id="mcSidebar">
+        <div class="mc-grp-label">Server</div>
+        <button class="mc-nav sel" data-tab="servers" onclick="mcTab('servers')"><span class="msr">dns</span><span class="mc-nav-label">Servers</span><span class="tooltip">Servers</span></button>
+        <button class="mc-nav" data-tab="console" onclick="mcTab('console')"><span class="msr">terminal</span><span class="mc-nav-label">Console</span><span class="tooltip">Console</span></button>
+        <div class="mc-grp-label">Management</div>
+        <button class="mc-nav" data-tab="mods" onclick="mcTab('mods');mcModsRefresh()"><span class="msr">extension</span><span class="mc-nav-label">Mods</span><span class="tooltip">Mods</span></button>
+        <button class="mc-nav" data-tab="files" onclick="mcTab('files')"><span class="msr">folder_open</span><span class="mc-nav-label">Files</span><span class="tooltip">Files</span></button>
+        <button class="mc-nav" data-tab="manage" onclick="mcTab('manage')"><span class="msr">settings_suggest</span><span class="mc-nav-label">Manage</span><span class="tooltip">Manage</span></button>
+        <button class="mc-nav" data-tab="tunnel" onclick="mcTab('tunnel');mcPlayitRefresh()"><span class="msr">public</span><span class="mc-nav-label">Tunnel</span><span class="tooltip">Tunnel</span></button>
+        <div class="mc-grp-label">Configuration</div>
+        <button class="mc-nav" data-tab="props" onclick="mcTab('props')"><span class="msr">tune</span><span class="mc-nav-label">Properties</span><span class="tooltip">Properties</span></button>
+        <div style="flex:1"></div>
+        <button class="mc-nav" data-tab="java" onclick="mcTab('java')"><span class="msr">coffee</span><span class="mc-nav-label">Java Runtime</span><span class="tooltip">Java Runtime</span></button>
+      </nav>
+      <div style="flex:1;min-width:0">
+      <!-- Active server bar (seperti profile selector) -->
+      <div class="nui-box" id="mcActiveBar" style="padding:14px 20px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
+        <span class="msr" style="font-size:20px;color:var(--n-accent,#D71921)">sports_esports</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-family:var(--n-f-ui);font-weight:600;font-size:14px;color:var(--n-primary)" id="mcActiveName">NO SERVER SELECTED</div>
+          <div class="nui-sub" style="margin:0" id="mcActiveMeta">Create Or Select A Server First</div>
+        </div>
+        <!-- Badge status dot ala opanel -->
+        <span id="mcActiveBadge" class="mc-badge" style="display:none"><i class="mc-dot"></i><span id="mcActiveBadgeTxt">—</span></span>
+      </div>
+      <!-- Dashboard card (pola opanel InfoCard + PlayersCard + TimeCard) -->
+      <div class="nui-box" id="mcDashCard" style="padding:20px;margin-bottom:14px;display:none">
+        <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+          <!-- kiri: meta server -->
+          <div style="flex:2;min-width:220px">
+            <div style="display:flex;gap:14px;align-items:baseline;flex-wrap:wrap">
+              <span class="nui-label" id="mcDashVersion" style="cursor:pointer" onclick="mcDashToggleVer()" title="Click To Toggle Java Version">—</span>
+              <span class="nui-label" style="color:var(--n-secondary)">PORT <span id="mcDashPort" style="font-family:var(--n-f-mono);color:oklch(0.62 0.13 165)">—</span></span>
+            </div>
+            <div id="mcDashMotd" style="margin-top:10px;font-family:var(--n-f-mono);font-size:12px;color:var(--n-primary);white-space:pre-wrap;word-break:break-word;max-height:40px;overflow:hidden"></div>
+            <!-- control buttons ala opanel ControlButtonGroup -->
+            <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+              <button class="nui-btn" style="padding:8px 14px;font-size:10px" onclick="mcTab('console')">CONSOLE</button>
+              <button class="nui-btn" style="padding:8px 14px;font-size:10px" onclick="mcTab('props')">PROPERTIES</button>
+              <button class="nui-btn" style="padding:8px 14px;font-size:10px" onclick="mcRestartConfirm()">RESTART</button>
+              <button class="nui-btn" style="padding:8px 14px;font-size:10px;border-color:oklch(0.6 0.21 25);color:oklch(0.6 0.21 25)" onclick="mcStopConfirm()">STOP</button>
+            </div>
+          </div>
+          <!-- kanan: players + uptime -->
+          <div style="flex:1;min-width:180px;display:flex;flex-direction:column;gap:10px">
+            <div>
+              <div class="nui-label" style="font-size:10px;color:var(--n-secondary)">PLAYERS</div>
+              <div style="font-size:22px;font-weight:700;color:var(--n-primary);font-family:var(--n-f-mono)"><span id="mcDashPlayers">0</span><span style="font-size:12px;color:var(--n-secondary)" id="mcDashMax">/20</span></div>
+              <div id="mcDashPlayerList" style="font-family:var(--n-f-mono);font-size:10px;color:var(--n-secondary);margin-top:4px;word-break:break-word"></div>
+            </div>
+            <div>
+              <div class="nui-label" style="font-size:10px;color:var(--n-secondary)">UPTIME</div>
+              <div style="font-size:22px;font-weight:700;color:var(--n-primary);font-family:var(--n-f-mono)" id="mcDashUptime">—</div>
+            </div>
+          </div>
+        </div>
+        <!-- Monitor: CPU + RAM JVM sparkline (pola opanel MonitorCard, canvas vanilla) -->
+        <div style="display:flex;gap:14px;margin-top:16px;flex-wrap:wrap">
+          <div style="flex:1;min-width:200px">
+            <div class="nui-label" style="font-size:10px;color:var(--n-secondary);margin-bottom:4px">JVM CPU <span id="mcMonCpuVal" style="float:right;color:var(--n-primary)">—</span></div>
+            <canvas id="mcMonCpu" height="48" style="width:100%;height:48px;display:block"></canvas>
+          </div>
+          <div style="flex:1;min-width:200px">
+            <div class="nui-label" style="font-size:10px;color:var(--n-secondary);margin-bottom:4px">JVM MEMORY <span id="mcMonMemVal" style="float:right;color:var(--n-primary)">—</span></div>
+            <canvas id="mcMonMem" height="48" style="width:100%;height:48px;display:block"></canvas>
+          </div>
+        </div>
+      </div>
+      <!-- Server picker list (scrollable, klik baris = pilih) -->
+      <div class="nui-box" id="mcActivePicker" style="padding:8px;margin-bottom:14px;display:none">
+        <div id="mcActiveList" class="mc-scroll" style="max-height:180px;overflow-y:auto"></div>
+      </div>
+      <!-- Java manager -->
+      <div class="nui-box mc-pane" data-pane="java" style="padding:24px">
+        <div class="mc-section-title"><div class="nui-label">JAVA RUNTIME</div><span id="mcJavaStatus" class="nui-label" style="font-size:10px"><span class="mc-status-dot off"></span>CHECKING…</span></div>
+        <div id="mcJavaStats" style="display:none;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+          <div class="mc-stat"><b id="mcStatVer">—</b><span>Version</span></div>
+          <div class="mc-stat"><b id="mcStatVendor">—</b><span>Vendor</span></div>
+          <div class="mc-stat"><b id="mcStatType">—</b><span>Source</span></div>
+        </div>
+        <div id="mcJavaInstall" style="display:none;margin-top:12px;display:flex;gap:10px;align-items:center">
+          <select id="mcJavaVer" class="nui-num" style="padding:8px;width:230px">
+            <option value="21">JAVA 21 (LTS — MC 1.20.5+)</option>
+            <option value="25">JAVA 25 (LTS — LATEST, MC 1.20.5+)</option>
+            <option value="17">JAVA 17 (LTS — MC 1.17–1.20.4)</option>
+          </select>
+          <select id="mcJavaVendor" class="nui-num" style="padding:8px;width:190px">
+            <option value="temurin">ECLIPSE TEMURIN</option>
+            <option value="microsoft">MICROSOFT OPENJDK</option>
+            <option value="azul">AZUL ZULU</option>
+          </select>
+          <button class="nui-btn accent" id="mcJavaBtn" onclick="mcInstallJava(this)">INSTALL</button>
+        </div>
+        <div id="mcJavaProgress" style="display:none;margin-top:10px">
+          <div style="display:flex;align-items:baseline;gap:12px">
+            <span id="mcJavaPct" style="font-size:18px;font-weight:700;color:var(--n-accent,#D71921)">000%</span>
+            <span id="mcJavaLine" class="nui-label" style="flex:1;text-align:right"></span>
+          </div>
+          <div class="nui-led" id="mcJavaLed"></div>
+        </div>
+      </div>
+      <!-- Create server -->
+      <div class="nui-box mc-pane" data-pane="servers" style="padding:24px;margin-top:14px">
+        <div class="mc-section-title"><div class="nui-label">CREATE SERVER</div></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <input id="mcName" class="nui-input" placeholder="server-name" style="flex:1;min-width:160px">
+          <select id="mcLoader" class="nui-num" style="padding:8px;width:130px">
+            <option value="vanilla">VANILLA</option>
+            <option value="paper">PAPER</option>
+            <option value="fabric">FABRIC</option>
+          </select>
+          <input id="mcVersion" class="nui-input" placeholder="1.21.4" value="1.21.4" style="width:110px">
+          <button class="nui-btn accent" onclick="mcCreate(this)">CREATE</button>
+        </div>
+      </div>
+      <!-- Server list -->
+      <div class="nui-box mc-pane" data-pane="servers" style="padding:24px;margin-top:14px">
+        <div class="mc-section-title"><div class="nui-label">YOUR SERVERS</div><span id="mcServerCount" class="nui-label" style="font-size:10px"></span></div>
+        <div id="mcServers" class="nui-filelist mc-scroll" style="margin-top:12px"></div>
+      </div>
+      <!-- Console — OPanel antarmuka style: colored log + shortcut chips + history + filter -->
+      <div class="nui-box mc-pane" id="mcConsoleBox" data-pane="console" style="padding:24px;margin-top:14px">
+        <div class="mc-section-title"><div class="nui-label">CONSOLE — <span id="mcConsoleName"></span></div><span id="mcConsoleState" class="nui-label" style="font-size:10px"></span></div>
+        <div id="mcConsoleLog" class="mc-log"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center" id="mcShortcutRow">
+            <button class="mc-chip" onclick="mcShortcutFill('list players')" ondblclick="mcShortcutSend('list players')">LIST</button>
+            <button class="mc-chip" onclick="mcShortcutFill('whitelist list')" ondblclick="mcShortcutSend('whitelist list')">WHITELIST</button>
+            <button class="mc-chip" onclick="mcShortcutFill('save-all')" ondblclick="mcShortcutSend('save-all')">SAVE-ALL</button>
+            <button class="mc-chip" onclick="mcShortcutFill('time set day')" ondblclick="mcShortcutSend('time set day')">DAY</button>
+            <button class="mc-chip" onclick="mcShortcutFill('weather clear')" ondblclick="mcShortcutSend('weather clear')">CLEAR</button>
+            <button class="mc-chip" onclick="mcShortcutFill('difficulty normal')" ondblclick="mcShortcutSend('difficulty normal')">NORMAL</button>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <button class="mc-chip" id="mcFilterBtn" onclick="mcLogFilterToggle()">FILTER: ALL</button>
+            <button class="mc-chip" onclick="mcCmdHistoryShow()">HISTORY</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:8px">
+          <input id="mcCmd" class="nui-input" placeholder="/ type a command…" style="flex:1" maxlength="256" onkeydown="if(event.key==='Enter')mcSendCmd();if(event.key==='ArrowUp')mcCmdHistPrev();if(event.key==='ArrowDown')mcCmdHistNext()">
+          <button class="nui-btn" onclick="mcSendCmd()" title="Send">SEND</button>
+        </div>
+        <div id="mcCmdHistory" style="display:none;margin-top:8px;max-height:140px;overflow-y:auto" class="mc-scroll"></div>
+      </div>
+      <!-- Mods — pola opanel players page: tabs (Installed dulu) + toolbar -->
+      <div class="nui-box mc-pane" data-pane="mods" style="padding:24px;margin-top:14px;display:none">
+        <div class="mc-section-title"><div class="nui-label" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">MODS &amp; PLUGINS — <span id="mcModsServerName"></span></div></div>
+        <div style="display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid var(--n-line)">
+          <button class="mc-tab2 sel" id="mcModsTabInst" onclick="mcModsTabSet('installed')">INSTALLED</button>
+          <button class="mc-tab2" id="mcModsTabBrowse" onclick="mcModsTabSet('browse')">BROWSE</button>
+        </div>
+        <!-- browse tab: provider + search -->
+        <div id="mcModsBrowse" style="display:none">
+          <div style="display:flex;gap:0;border:1px solid var(--n-line);border-radius:999px;overflow:hidden;flex-shrink:0;width:fit-content;margin-bottom:12px">
+            <button class="nui-btn" id="mcProvAll" style="padding:6px 14px;font-size:10px;border-radius:0;border:none" onclick="mcProviderSet('all')">ALL</button>
+            <button class="nui-btn" id="mcProvModrinth" style="padding:6px 14px;font-size:10px;border-radius:0;border:none" onclick="mcProviderSet('modrinth')">MODRINTH</button>
+            <button class="nui-btn" id="mcProvHangar" style="padding:6px 14px;font-size:10px;border-radius:0;border:none" onclick="mcProviderSet('hangar')">HANGAR</button>
+          </div>
+          <div style="display:flex;gap:10px;margin-bottom:12px">
+            <input id="mcModsQuery" class="nui-input" placeholder="search mods…" style="flex:1" autocomplete="off" name="nigiro-mod-search" onkeydown="if(event.key==='Enter')mcModsSearch()">
+            <button class="nui-btn" onclick="mcModsSearch()">SEARCH</button>
+          </div>
+          <div id="mcModsResults" class="nui-filelist mc-scroll"></div>
+          <div id="mcHangarPaging" style="display:flex;gap:8px;justify-content:center;margin-top:10px"></div>
+        </div>
+        <!-- installed tab: default -->
+        <div id="mcModsInstalledWrap">
+          <div class="nui-label" style="margin:0 0 6px">INSTALLED</div>
+          <div id="mcModsInstalled" class="nui-filelist"></div>
+        </div>
+      </div>
+      <!-- Files (file manager — pola opanel FilesTable) -->
+      <div class="nui-box mc-pane" data-pane="files" style="padding:24px;margin-top:14px;display:none">
+        <div class="mc-section-title"><div class="nui-label">FILES — <span id="mcFilesPath">/</span></div>
+          <button class="nui-btn ghost" id="mcFilesUp" onclick="mcFilesUp()" style="display:none;padding:8px 14px;font-size:10px">↑ UP</button>
+          <input id="mcFilesFilter" class="nui-input" placeholder="filter…" style="width:140px;padding:7px 12px;font-size:11px" oninput="mcFilesApplyFilter()" autocomplete="off" name="nigiro-file-filter">
+          <button class="nui-btn ghost" onclick="mcFileNew()" style="padding:8px 14px;font-size:10px">+ NEW FILE</button>
+          <button class="nui-btn ghost" onclick="mcFilesOpen(mcFilesRel)" style="padding:8px 14px;font-size:10px" title="Refresh">↻</button>
+        </div>
+        <div style="display:flex;gap:10px;padding:6px 12px;border-bottom:1px solid var(--n-line);font-family:var(--n-f-mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--n-muted)"><span style="flex:1">Name</span><span style="width:90px;text-align:right">Size</span><span style="width:70px;text-align:right">Actions</span></div>
+        <div id="mcFilesList" class="nui-filelist" style="border:none"></div>
+        <div id="mcFileEdit" style="display:none;margin-top:14px;border-top:1px solid var(--n-line);padding-top:14px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <div class="nui-label" style="flex:1" id="mcFileEditName"></div>
+            <button class="nui-btn ghost" onclick="mcFileEditClose()" style="padding:8px 14px;font-size:10px">CLOSE</button>
+            <button class="nui-btn accent" onclick="mcFileSave(this)">SAVE</button>
+          </div>
+          <textarea id="mcFileText" class="nui-input" style="width:100%;height:300px;font-family:var(--n-f-mono);font-size:11px;resize:vertical" spellcheck="false"></textarea>
+        </div>
+      </div>
+      <!-- Manage (RAM / tasks / players / backups) -->
+      <div class="nui-box mc-pane" data-pane="manage" style="padding:24px;margin-top:14px;display:none">
+        <div class="mc-section-title"><div class="nui-label">MANAGE SERVER</div></div>
+        <!-- RAM -->
+        <div class="nui-label" style="margin-bottom:6px">MEMORY ALLOCATION</div>
+        <div style="display:flex;gap:12px;align-items:center">
+          <input type="range" id="mcRamSlider" min="512" max="32768" step="512" value="2048" style="flex:1;accent-color:var(--n-accent,#D71921)" oninput="$('#mcRamVal').textContent=(+this.value/1024).toFixed(1)+' GB'">
+          <span id="mcRamVal" style="font-family:var(--n-f-mono);font-size:12px;min-width:60px;text-align:right">2.0 GB</span>
+          <button class="nui-btn accent" style="padding:8px 14px;font-size:10px" onclick="mcRamSave(this)">SET</button>
+        </div>
+        <!-- Java runtime per server -->
+        <div class="nui-label" style="margin:18px 0 6px">JAVA RUNTIME (PER SERVER)</div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <select id="mcServerJava" class="nui-num" style="padding:8px;width:280px" onchange="mcJavaSet(this.value)">
+            <option value="">AUTO (RECOMMENDED)</option>
+          </select>
+          <span class="nui-sub" style="margin:0" id="mcServerJavaMeta"></span>
+        </div>
+        <!-- Scheduled tasks -->
+        <div class="nui-label" style="margin:18px 0 6px">SCHEDULED TASKS</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <select id="mcTaskAction" class="nui-num" style="padding:8px;width:140px">
+            <option value="restart">AUTO RESTART</option>
+            <option value="stop">AUTO STOP</option>
+          </select>
+          <input id="mcTaskMin" class="nui-input" type="number" min="5" max="1440" value="180" style="width:90px" title="minutes">
+          <span class="nui-sub" style="margin:0">MIN</span>
+          <button class="nui-btn accent" style="padding:8px 14px;font-size:10px" onclick="mcTaskSet(this)">SCHEDULE</button>
+          <button class="nui-btn" style="padding:8px 14px;font-size:10px" onclick="mcTaskClear(this)">CLEAR</button>
+          <span id="mcTaskState" class="nui-label" style="font-size:10px"></span>
+        </div>
+        <!-- Players — OPanel players table style -->
+        <div class="nui-label" style="margin:18px 0 6px">PLAYERS — <span id="mcPlayersCount"></span></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+          <input id="mcPlayerName" class="nui-input" placeholder="PlayerName" style="width:160px">
+          <button class="nui-btn" style="padding:8px 14px;font-size:10px" onclick="mcPlayerOp('whitelist-add')">+ WHITELIST</button>
+          <button class="nui-btn" style="padding:8px 14px;font-size:10px" onclick="mcPlayerOp('whitelist-remove')">− WHITELIST</button>
+          <button class="nui-btn accent" style="padding:8px 14px;font-size:10px" onclick="mcPlayerOp('op')">+ OP</button>
+          <button class="nui-btn" style="padding:8px 14px;font-size:10px" onclick="mcPlayerOp('deop')">− OP</button>
+        </div>
+        <div id="mcPlayersList" class="nui-filelist"></div>
+        <!-- Backups -->
+        <div class="nui-label" style="margin:18px 0 6px">WORLD BACKUPS</div>
+        <button class="nui-btn accent" style="padding:8px 16px;font-size:10px" onclick="mcBackupNow(this)">BACKUP NOW</button>
+        <div id="mcBackupsList" class="nui-filelist" style="margin-top:10px"></div>
+      </div>
+      <!-- Tunnel (ngrok TCP — pengganti playit) -->
+      <div class="nui-box mc-pane" data-pane="tunnel" style="padding:24px;margin-top:14px;display:none">
+        <div class="mc-section-title"><div class="nui-label">TUNNEL — NGROK TCP</div><span id="mcPlayitState" class="nui-label" style="font-size:10px"><span class="mc-status-dot off"></span>CHECKING…</span></div>
+        <p class="nui-sub" style="margin-bottom:14px">Expose Your Minecraft Server To The Internet Without Port Forwarding. Paste Your Authtoken Once (Free At <b>dashboard.ngrok.com → Getting Started → Your Authtoken</b>), Then Share The Address Below With Friends.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <input id="mcNgrokToken" class="nui-input" placeholder="ngrok authtoken (one-time)" style="flex:1;min-width:220px" autocomplete="off" name="nigiro-ngrok-token">
+          <button class="nui-btn accent" id="mcPlayitBtn" onclick="mcPlayitToggle(this)">START AGENT</button>
+        </div>
+        <div id="mcNgrokAddr" style="display:none;margin-top:14px;padding:14px;background:var(--n-raised);border:1px solid var(--n-line);border-radius:8px;align-items:center;gap:12px">
+          <span class="nui-label" style="font-size:10px">PUBLIC ADDRESS</span>
+          <span id="mcNgrokAddrVal" style="font-family:var(--n-f-mono);font-size:15px;font-weight:700;color:var(--n-primary)"></span>
+          <button class="nui-btn ghost" style="padding:6px 12px;font-size:10px;margin-left:auto" onclick="navigator.clipboard.writeText(document.getElementById('mcNgrokAddrVal').textContent);toast('Address Copied')">COPY</button>
+        </div>
+        <div id="mcPlayitLog" style="font-family:var(--n-f-mono);font-size:11px;background:var(--n-raised);border-radius:8px;padding:14px;height:200px;overflow-y:auto;white-space:pre-wrap;color:var(--n-primary);margin-top:14px"></div>
+      </div>
+      <!-- Properties editor: schema form (default) + raw (advanced) -->
+      <div class="nui-box mc-pane" id="mcPropsBox" data-pane="props" style="padding:24px;margin-top:14px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div class="nui-label" style="flex:1">SERVER.PROPERTIES — <span id="mcPropsName"></span></div>
+          <button class="nui-btn" id="mcPropsModeBtn" style="padding:8px 14px;font-size:10px" onclick="mcPropsToggleMode()">RAW</button>
+          <button class="nui-btn accent" onclick="mcSaveProps(this)">SAVE</button>
+        </div>
+        <div id="mcPropsForm" style="display:flex;flex-direction:column;gap:18px;max-height:460px;overflow-y:auto"></div>
+        <textarea id="mcPropsText" class="nui-input" style="display:none;width:100%;height:320px;font-family:var(--n-f-mono);font-size:11px;resize:vertical" spellcheck="false"></textarea>
+      </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- App detail: NigiroDownloader -->
+  <section id="view-app-downloader" style="display:none">
+    <div class="nui-header nui">
+      <button class="nui-back" onclick="showView('apps')" title="Back"><span class="msr">arrow_back</span></button>
+      <div style="flex:1">
+        <h2 class="nui-title">NIGIRO.DOWNLOADER<span class="nui-dot">_</span></h2>
+        <p class="nui-sub">Dual Engine — yt-dlp + Cobalt Auto-Fallback</p>
+      </div>
+    </div>
+    <div class="nui" style="max-width:760px">
+      <div class="nui-box" style="padding:24px">
+        <div class="nui-label" style="margin-bottom:8px">&gt; Paste URL</div>
+        <input id="appsUrl" class="nui-input" placeholder="https:// ...">
+        <div class="nui-label" style="margin:20px 0 8px">&gt; Format</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+          <button class="nui-opt" data-mode="video" onclick="appsPickMode(this)">
+            <span class="msr" style="font-size:20px;color:var(--n-display)">movie</span>
+            <div class="nui-opt-name">VIDEO</div>
+            <div class="nui-opt-sub" id="appsVideoSub">1080P · MP4</div>
+          </button>
+          <button class="nui-opt" data-mode="audio" onclick="appsPickMode(this)">
+            <span class="msr" style="font-size:20px;color:var(--n-display)">graphic_eq</span>
+            <div class="nui-opt-name">AUDIO</div>
+            <div class="nui-opt-sub" id="appsAudioSub">MP3 · BEST</div>
+          </button>
+        </div>
+        <!-- pilihan format + resolusi video (muncul saat mode VIDEO dipilih) -->
+        <div id="appsVideoFmtRow" style="display:none;margin-top:14px;align-items:center;gap:10px;flex-wrap:wrap">
+          <span class="nui-label" style="margin:0">&gt; Video Format</span>
+          <div style="display:flex;gap:8px">
+            <button class="nui-opt" data-vfmt="mp4" onclick="appsPickVfmt(this)" style="padding:6px 16px"><div class="nui-opt-name" style="font-size:11px">MP4</div></button>
+            <button class="nui-opt" data-vfmt="mkv" onclick="appsPickVfmt(this)" style="padding:6px 16px"><div class="nui-opt-name" style="font-size:11px">MKV</div></button>
+            <button class="nui-opt" data-vfmt="webm" onclick="appsPickVfmt(this)" style="padding:6px 16px"><div class="nui-opt-name" style="font-size:11px">WEBM</div></button>
+            <button class="nui-opt" data-vfmt="mov" onclick="appsPickVfmt(this)" style="padding:6px 16px"><div class="nui-opt-name" style="font-size:11px">MOV</div></button>
+          </div>
+        </div>
+        <div id="appsVideoResRow" style="display:none;margin-top:14px;align-items:center;gap:10px;flex-wrap:wrap">
+          <span class="nui-label" style="margin:0">&gt; Resolution</span>
+          <div style="display:flex;gap:8px">
+            <button class="nui-opt" data-vres="2160" onclick="appsPickVres(this)" style="padding:6px 16px"><div class="nui-opt-name" style="font-size:11px">4K</div></button>
+            <button class="nui-opt" data-vres="1440" onclick="appsPickVres(this)" style="padding:6px 16px"><div class="nui-opt-name" style="font-size:11px">1440P</div></button>
+            <button class="nui-opt" data-vres="1080" onclick="appsPickVres(this)" style="padding:6px 16px"><div class="nui-opt-name" style="font-size:11px">1080P</div></button>
+            <button class="nui-opt" data-vres="720" onclick="appsPickVres(this)" style="padding:6px 16px"><div class="nui-opt-name" style="font-size:11px">720P</div></button>
+            <button class="nui-opt" data-vres="480" onclick="appsPickVres(this)" style="padding:6px 16px"><div class="nui-opt-name" style="font-size:11px">480P</div></button>
+            <button class="nui-opt" data-vres="360" onclick="appsPickVres(this)" style="padding:6px 16px"><div class="nui-opt-name" style="font-size:11px">360P</div></button>
+          </div>
+        </div>
+        <!-- pilihan format audio (muncul saat mode AUDIO dipilih) -->
+        <div id="appsAudioFmtRow" style="display:none;margin-top:14px;align-items:center;gap:10px;flex-wrap:wrap">
+          <span class="nui-label" style="margin:0">&gt; Audio Format</span>
+          <div style="display:flex;gap:8px">
+            <button class="nui-opt" data-afmt="mp3" onclick="appsPickAfmt(this)" style="padding:6px 16px"><div class="nui-opt-name" style="font-size:11px">MP3</div></button>
+            <button class="nui-opt" data-afmt="m4a" onclick="appsPickAfmt(this)" style="padding:6px 16px"><div class="nui-opt-name" style="font-size:11px">M4A</div></button>
+            <button class="nui-opt" data-afmt="opus" onclick="appsPickAfmt(this)" style="padding:6px 16px"><div class="nui-opt-name" style="font-size:11px">OPUS</div></button>
+            <button class="nui-opt" data-afmt="wav" onclick="appsPickAfmt(this)" style="padding:6px 16px"><div class="nui-opt-name" style="font-size:11px">WAV</div></button>
+            <button class="nui-opt" data-afmt="flac" onclick="appsPickAfmt(this)" style="padding:6px 16px"><div class="nui-opt-name" style="font-size:11px">FLAC</div></button>
+          </div>
+        </div>
+        <div id="appsAudioQRow" style="display:none;margin-top:14px;align-items:center;gap:10px;flex-wrap:wrap">
+          <span class="nui-label" style="margin:0">&gt; Quality</span>
+          <div style="display:flex;gap:8px">
+            <button class="nui-opt" data-aq="0" onclick="appsPickAq(this)" style="padding:6px 16px"><div class="nui-opt-name" style="font-size:11px">BEST</div></button>
+            <button class="nui-opt" data-aq="5" onclick="appsPickAq(this)" style="padding:6px 16px"><div class="nui-opt-name" style="font-size:11px">MEDIUM</div></button>
+            <button class="nui-opt" data-aq="9" onclick="appsPickAq(this)" style="padding:6px 16px"><div class="nui-opt-name" style="font-size:11px">SMALL</div></button>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;width:100%;margin-top:20px">
+          <button class="nui-btn" onclick="appsPreview()" style="flex:1">
+            <span class="msr" style="font-size:16px;vertical-align:-3px">visibility</span> PREVIEW
+          </button>
+          <button class="nui-btn" id="appsPlayBtn" onclick="appsPlayInline()" style="flex:1;display:none">
+            <span class="msr" style="font-size:16px;vertical-align:-3px">play_circle</span> PLAY
+          </button>
+        </div>
+        <div id="appsPreviewBox" style="display:none;margin-top:14px;border:1px solid var(--n-line-2);border-radius:12px;overflow:hidden;background:#000">
+          <div id="appsPreviewMedia"></div>
+          <div id="appsPreviewMeta" style="padding:12px 16px;background:var(--n-raised);font-family:var(--n-f-mono);font-size:11px;color:var(--n-secondary)"></div>
+        </div>
+        <button class="nui-btn accent" onclick="appsDownload()" style="width:100%;margin-top:14px">
+          <span class="msr" style="font-size:16px;vertical-align:-3px">download</span> DOWNLOAD
+        </button>
+        <div id="appsDlStatus" style="display:none;margin-top:18px">
+          <div style="display:flex;align-items:baseline;gap:12px">
+            <span id="appsDlPct" style="font-size:20px;font-weight:700;color:var(--n-accent,#D71921)">000%</span>
+            <span id="appsDlLine" class="nui-label" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right"></span>
+          </div>
+          <div class="nui-led" id="appsDlLed"></div>
+        </div>
+      </div>
+      <div class="nui-box" style="padding:20px;margin-top:14px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+          <div class="nui-label" style="flex:1">Downloaded Files</div>
+          <span class="nui-label" style="font-size:9px">Auto-Delete 24H</span>
+          <label class="nui-btn ghost" style="padding:8px 14px;font-size:10px;cursor:pointer">Upload<input type="file" id="appsUpload" multiple style="display:none" onchange="appsUpload(this)"></label>
+        </div>
+        <div id="appsMediaFiles" class="nui-filelist"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- App detail: PDF Tools -->
+  <section id="view-app-pdf" style="display:none">
+    <div class="nui-header nui">
+      <button class="nui-back" onclick="showView('apps')" title="Back"><span class="msr">arrow_back</span></button>
+      <div style="flex:1">
+        <h2 class="nui-title">NIGIRO.COMPRESS<span class="nui-dot">_</span></h2>
+        <p class="nui-sub">PDF · Video — Shrink Anything</p>
+      </div>
+    </div>
+    <div class="nui" style="max-width:760px">
+      <div class="nui-box" style="padding:24px">
+        <div class="nui-label" style="margin-bottom:12px">DROP FILES HERE</div>
+        <label id="appsDropzone" class="nui-dropzone" for="appsUploadPdf">
+          <span class="msr" style="font-size:36px;color:var(--n-secondary)">upload_file</span>
+          <div style="font-size:13px;margin-top:8px;color:var(--md-on-surface)">Click To Browse — Or Drag &amp; Drop</div>
+          <div style="font-size:10px;color:var(--n-secondary);margin-top:4px;letter-spacing:.1em">PDF · VIDEO · AUTO-DELETE 24H</div>
+          <input type="file" id="appsUploadPdf" multiple accept="application/pdf,video/*" style="display:none" onchange="appsUpload(this)">
+        </label>
+      </div>
+      <div class="nui-box" style="padding:24px;margin-top:14px">
+        <div class="nui-label" style="margin-bottom:6px">PDF — COMPRESS / SPLIT PER FILE</div>
+        <div id="appsPdfFiles" class="nui-filelist" style="margin-top:12px"></div>
+        <div class="nui-label" style="margin:18px 0 0">VIDEOS — COMPRESS TO TARGET SIZE</div>
+        <div id="appsVideoFiles" class="nui-filelist" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- App detail: Image Tools -->
+  <section id="view-app-image" style="display:none">
+    <div class="nui-header nui">
+      <button class="nui-back" onclick="showView('apps')" title="Back"><span class="msr">arrow_back</span></button>
+      <div style="flex:1">
+        <h2 class="nui-title">NIGIRO.CONVERT<span class="nui-dot">_</span></h2>
+        <p class="nui-sub">Image · Audio · Video — Any Format To Any Format</p>
+      </div>
+    </div>
+    <div class="nui" style="max-width:760px">
+      <div class="nui-box" style="padding:24px">
+        <div class="nui-label" style="margin-bottom:12px">DROP FILES HERE</div>
+        <label id="appsDropzoneImg" class="nui-dropzone" for="appsUploadImg">
+          <span class="msr" style="font-size:36px;color:var(--n-secondary)">upload_file</span>
+          <div style="font-size:13px;margin-top:8px;color:var(--md-on-surface)">Click To Browse — Or Drag &amp; Drop</div>
+          <div style="font-size:10px;color:var(--n-secondary);margin-top:4px;letter-spacing:.1em">IMAGE · AUDIO · VIDEO · AUTO-DELETE 24H</div>
+          <input type="file" id="appsUploadImg" multiple accept="image/*,video/*,audio/*" style="display:none" onchange="appsUpload(this)">
+        </label>
+      </div>
+      <div class="nui-box" style="padding:24px;margin-top:14px">
+        <div class="nui-label" style="margin-bottom:6px">IMAGES — PICK A TARGET FORMAT</div>
+        <div id="appsImageFiles" class="nui-filelist" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trash view (full page, gaya dashboard) -->
+  <section id="view-trash" style="display:none">
+    <div class="dash-header"><h2>Trash</h2><p style="color:var(--md-on-surface-variant);font-size:13px;margin:4px 0 0">Deleted Files Stay Here Until Permanently Removed.</p></div>
+    <div id="trashBody"></div>
+  </section>
+
+  <!-- Duplicates view (full page, gaya dashboard) -->
+  <section id="view-dupes" style="display:none">
+    <div class="dash-header"><h2>Find Duplicates</h2><p style="color:var(--md-on-surface-variant);font-size:13px;margin:4px 0 0">Files With Identical Content Across The Vault.</p></div>
+    <div id="dupesBody"></div>
+  </section>
+
+  <!-- Maps view (lokasi foto berdasarkan EXIF GPS) -->
+  <section id="view-maps" style="display:none">
+    <div class="dash-header">
+      <h2>Maps</h2>
+      <p style="color:var(--md-on-surface-variant);font-size:13px;margin:4px 0 0">Where Your Photos Were Taken — From EXIF Location Data.</p>
+    </div>
+    <div id="mapsLoading" style="display:none;color:var(--md-on-surface-variant);font-size:13px;padding:8px 0">Scanning Photos For Location Data…</div>
+    <div id="mapCanvas" style="display:none;height:calc(100vh - 220px);min-height:420px;border-radius:20px;overflow:hidden;border:1px solid var(--md-outline-variant)"></div>
+    <style>
+      /* Sidebar & Topbar: teks tidak selectable (UI chrome, bukan konten) */
+      .topbar, .sidebar { user-select: none; -webkit-user-select: none; }
+      /* Leaflet panes (z-index 400-700) menang atas dialog-backdrop (z-300) → dialog profile jadi tak bisa diklik, klik "fokus" ke map.
+         Turunkan z-index internal Leaflet di bawah dialog. */
+      #mapCanvas.leaflet-container { z-index: 0; }
+      #mapCanvas .leaflet-pane, #mapCanvas .leaflet-tile-pane, #mapCanvas .leaflet-overlay-pane,
+      #mapCanvas .leaflet-shadow-pane, #mapCanvas .leaflet-tooltip-pane,
+      #mapCanvas .leaflet-control { z-index: auto; }
+      /* popup & marker TETAP di atas tile (default Leaflet 600/700) — kalau di-auto, tile bisa menimpa popup */
+      #mapCanvas .leaflet-marker-pane { z-index: 600; }
+      #mapCanvas .leaflet-popup-pane { z-index: 700; }
+    </style>
+  </section>
+
+  <!-- Favorites view -->
+  <section id="view-favorites" style="display:none">
+    <div class="dash-header"><h2>Favorites</h2><p style="color:var(--md-on-surface-variant);font-size:13px;margin:4px 0 0">Photos And Videos You Marked With The Heart.</p></div>
+    <div id="favEmpty" style="display:none;text-align:center;padding:80px 0;color:var(--md-on-surface-variant)">
+      <span class="msr" style="font-size:64px;color:var(--md-outline)">favorite</span>
+      <p>No Favorites Yet.</p>
+      <p style="font-size:12px">Open A Photo Or Video And Tap The Heart Icon.</p>
+    </div>
+    <div id="favGallery"></div>
+  </section>
+
+  <section id="view-archive" style="display:none">
+    <div class="dash-header"><h2>Archive</h2><p style="color:var(--md-on-surface-variant);font-size:13px;margin:4px 0 0">Hidden From The Timeline Without Deleting. Unarchive Anytime.</p></div>
+    <div id="archEmpty" style="display:none;text-align:center;padding:80px 0;color:var(--md-on-surface-variant)">
+      <span class="msr" style="font-size:64px;color:var(--md-outline)">archive</span>
+      <p>Nothing Archived.</p>
+    </div>
+    <div id="archGallery"></div>
+  </section>
+
+  <section id="view-albums" style="display:none">
+    <div class="dash-header" style="display:flex;align-items:center;gap:12px">
+      <div style="flex:1"><h2>Auto Albums</h2><p style="color:var(--md-on-surface-variant);font-size:13px;margin:4px 0 0">Albums That Build Themselves From Rules — Place, Year, Or Favorites.</p></div>
+      <button class="sync-btn" onclick="showAddAlbum()">New Smart Album</button>
+    </div>
+    <div id="albumList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px"></div>
+    <div id="albumItems" style="margin-top:24px"></div>
+
+    <!-- Manual albums -->
+    <div class="dash-header" style="display:flex;align-items:center;gap:12px;margin-top:32px">
+      <div style="flex:1"><h2>Albums</h2><p style="color:var(--md-on-surface-variant);font-size:13px;margin:4px 0 0">Hand-Picked Collections — Group Photos Into Events, Trips, Or People.</p></div>
+      <button class="sync-btn" onclick="showNewAlbum()">New Album</button>
+    </div>
+    <div id="manualAlbumList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px"></div>
+    <div id="manualAlbumItems" style="margin-top:24px"></div>
+  </section>
+
+  <!-- New manual album dialog -->
+  <div id="manualAlbumDialog" class="dialog-backdrop" style="display:none" onclick="if(event.target===this)closeNewAlbum()">
+    <div class="dialog" style="max-width:420px">
+      <h3 style="margin:0 0 4px;font-size:18px;font-weight:500">New Album</h3>
+      <p style="margin:0 0 16px;font-size:13px;color:var(--md-on-surface-variant)">Add Photos To It Later From The Lightbox.</p>
+      <label style="display:block;font-size:12px;font-weight:500;margin-bottom:4px">Album Name</label>
+      <input id="mAlbName" placeholder="e.g. Trip Jogja 2025" style="width:100%;box-sizing:border-box;padding:10px 14px;border-radius:12px;border:1px solid var(--md-outline-variant);background:var(--md-surface-container);color:var(--md-on-surface);font:400 14px 'Plus Jakarta Sans',sans-serif;margin-bottom:12px;outline:none">
+      <div id="mAlbError" style="color:var(--md-error);font-size:12px;min-height:18px;margin-bottom:8px"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="crumb" onclick="closeNewAlbum()">Cancel</button>
+        <button class="sync-btn" style="min-width:110px" onclick="createManualAlbum()">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add-to-album picker dialog (dari lightbox) -->
+  <div id="addToAlbumDialog" class="dialog-backdrop" style="display:none" onclick="if(event.target===this)closeAddToAlbum()">
+    <div class="dialog" style="max-width:420px">
+      <h3 style="margin:0 0 4px;font-size:18px;font-weight:500">Add To Album</h3>
+      <p style="margin:0 0 16px;font-size:13px;color:var(--md-on-surface-variant)">Pick An Album For This Photo.</p>
+      <div id="addToAlbumList" style="display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto"></div>
+      <div style="margin-top:16px;text-align:right">
+        <button class="crumb" onclick="closeAddToAlbum()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add smart album dialog -->
+  <div id="albumDialog" class="dialog-backdrop" style="display:none" onclick="if(event.target===this)closeAddAlbum()">
+    <div class="dialog" style="max-width:420px">
+      <h3 style="margin:0 0 4px;font-size:18px;font-weight:500">New Smart Album</h3>
+      <p style="margin:0 0 16px;font-size:13px;color:var(--md-on-surface-variant)">Fill Any Combination — Empty Fields Are Ignored.</p>
+      <label style="display:block;font-size:12px;font-weight:500;margin-bottom:4px">Album Name</label>
+      <input id="albName" placeholder="e.g. Jogja Trip" style="width:100%;box-sizing:border-box;padding:10px 14px;border-radius:12px;border:1px solid var(--md-outline-variant);background:var(--md-surface-container);color:var(--md-on-surface);font:400 14px 'Plus Jakarta Sans',sans-serif;margin-bottom:12px;outline:none">
+      <label style="display:block;font-size:12px;font-weight:500;margin-bottom:4px">Place Contains</label>
+      <input id="albPlace" placeholder="e.g. Yogyakarta" style="width:100%;box-sizing:border-box;padding:10px 14px;border-radius:12px;border:1px solid var(--md-outline-variant);background:var(--md-surface-container);color:var(--md-on-surface);font:400 14px 'Plus Jakarta Sans',sans-serif;margin-bottom:12px;outline:none">
+      <label style="display:block;font-size:12px;font-weight:500;margin-bottom:4px">Year</label>
+      <input id="albYear" type="number" placeholder="e.g. 2025" style="width:100%;box-sizing:border-box;padding:10px 14px;border-radius:12px;border:1px solid var(--md-outline-variant);background:var(--md-surface-container);color:var(--md-on-surface);font:400 14px 'Plus Jakarta Sans',sans-serif;margin-bottom:12px;outline:none">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;margin-bottom:16px;cursor:pointer"><input id="albFav" type="checkbox" style="accent-color:var(--md-primary)"> Favorites Only</label>
+      <div id="albError" style="color:var(--md-error);font-size:12px;min-height:18px;margin-bottom:8px"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="crumb" onclick="closeAddAlbum()">Cancel</button>
+        <button class="sync-btn" style="min-width:110px" onclick="createAlbum()">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <section id="view-monitoring" style="display:none">
+    <div class="dash-header">
+      <h2>Monitoring</h2>
+      <p style="color:var(--md-on-surface-variant);font-size:13px;margin:4px 0 0">Real-Time System Performance — Nothing UI.</p>
+    </div>
+    <div id="monAlertBanner" style="display:none"></div>
+    <div id="monThrPanel"></div>
+    <div style="display:grid;grid-template-columns:250px 1fr;gap:0;border:1px solid var(--n-line);align-items:stretch">
+      <div id="monList" style="border-right:1px solid var(--n-line)"></div>
+      <div id="monDetail"></div>
+    </div>
+  </section>
+
+  <section id="view-documents" style="display:none">
+    <div class="dash-header">
+      <h2>Documents</h2>
+      <p style="color:var(--md-on-surface-variant);font-size:13px;margin:4px 0 0">Documents From Your Backups — PDF, Word, Spreadsheets, And Text Files.</p>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
+        <div style="position:relative;width:min(340px,100%)">
+          <span class="msr" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:18px;color:var(--n-secondary);pointer-events:none">search</span>
+          <input id="docsSearch" type="search" placeholder="Search Documents…" oninput="docsPage = 1; renderDocs()" autocomplete="off" name="nigiro-doc-search" style="padding:9px 14px 9px 40px;border-radius:8px;border:1px solid var(--n-line);background:var(--n-raised);color:var(--n-primary);font-family:var(--n-f-mono);font-size:13px;width:100%;outline:none;transition:border-color .2s ease-in-out" onfocus="this.style.borderColor='var(--n-line-2)'" onblur="this.style.borderColor='var(--n-line)'">
+        </div>
+        <button id="docsFilterBtn" class="n-btn n-btn-outline" style="padding:6px 14px" onclick="showDocsFilterDialog()"><span id="docsFilterLabel">Filter</span></button>
+        <button id="docsLayoutBtn" class="n-btn n-btn-outline" style="padding:6px 10px" onclick="toggleDocsLayout()" title="Toggle Grid / Details"><span class="msr" id="docsLayoutIcon" style="font-size:16px;vertical-align:-3px">view_list</span></button>
+      </div>
+    </div>
+    <div id="docsEmpty" style="display:none;text-align:center;padding:80px 0;color:var(--md-on-surface-variant)">
+      <span class="msr" style="font-size:64px;color:var(--md-outline)">description</span>
+      <p>No Documents Backed Up Yet.</p>
+    </div>
+    <div id="docsList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;max-width:1100px"></div>
+    <div id="docsPager" style="display:none;align-items:center;justify-content:center;gap:14px;padding:20px 0 8px;max-width:1100px">
+      <button id="docsPrevBtn" class="n-btn n-btn-outline" style="padding:6px 14px" onclick="docsGoPage(-1)"><span class="msr" style="font-size:16px;vertical-align:-3px">chevron_left</span> Prev</button>
+      <span id="docsPageInfo" style="font-family:var(--n-f-mono);font-size:11px;color:var(--md-on-surface-variant);letter-spacing:.04em"></span>
+      <button id="docsNextBtn" class="n-btn n-btn-outline" style="padding:6px 14px" onclick="docsGoPage(1)">Next <span class="msr" style="font-size:16px;vertical-align:-3px">chevron_right</span></button>
+    </div>
+  </section>
+
+  <!-- Documents filter dialog -->
+<div id="docsFilterDialog" class="dialog-backdrop" style="display:none" onclick="if(event.target===this)closeDocsFilterDialog()">
+  <div class="dialog">
+    <h3 style="margin:0 0 4px;font-size:18px;font-weight:500">Filter Documents</h3>
+    <p style="margin:0 0 16px;font-size:13px;color:var(--md-on-surface-variant)">Narrow Down By Document Type</p>
+    <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--md-on-surface-variant);margin-bottom:8px;display:flex;align-items:center;gap:6px"><span class="msr" style="font-size:14px">category</span> Type</div>
+    <div id="docsFilterTypes" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    <div style="margin-top:18px;display:flex;justify-content:space-between;align-items:center">
+      <button class="crumb" id="docsFilterReset" style="display:none" onclick="resetDocsFilter()">Reset</button>
+      <span style="flex:1"></span>
+      <button class="crumb" onclick="closeDocsFilterDialog()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- PDF preview dialog -->
+  <div id="pdfDialog" class="dialog-backdrop" style="display:none" onclick="if(event.target===this)closePdfDialog()">
+    <div class="dialog" style="width:min(900px,95vw);height:min(85vh,900px);display:flex;flex-direction:column">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <b id="pdfTitle" style="font-size:14px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></b>
+        <a id="pdfDownload" download><button class="crumb"><span class="msr" style="font-size:16px;vertical-align:-3px">download</span> Download</button></a>
+        <button class="crumb" onclick="closePdfDialog()">Close</button>
+      </div>
+      <iframe id="pdfFrame" style="flex:1;border:none;border-radius:12px;background:#fff"></iframe>
+    </div>
+  </div>
+
+  <!-- Year In Review view -->
+  <section id="view-recap" style="display:none">
+    <div class="dash-header">
+      <h2>Year In Review</h2>
+      <p style="color:var(--md-on-surface-variant);font-size:13px;margin:4px 0 0">Your Vault Recap Per Year.</p>
+    </div>
+    <div id="recapYearPicker"></div>
+    <div id="recapBody"><div class="rc-sec"><div class="rc-empty">Select A Year.</div></div></div>
+  </section>
+
+  <!-- Settings view — Nothing UI -->
+  <section id="view-settings" style="display:none">
+    <div class="nui-header nui">
+      <div style="flex:1">
+        <h2 class="nui-title">SETTINGS<span class="nui-dot">.</span></h2>
+        <p class="nui-sub">Storage Volumes, Server Preferences, And Security</p>
+      </div>
+    </div>
+    <div class="nui" style="max-width:900px">
+
+    <div class="dash-section">
+      <h3 class="set-h3"><span class="msr">storage</span> Storage Volumes</h3>
+      <div id="volumeList" style="display:flex;flex-direction:column;gap:10px"></div>
+      <button class="n-btn" style="margin-top:14px" onclick="showAddVolume()">
+        <span class="msr" style="font-size:16px;vertical-align:-3px">add</span> Add Volume
+      </button>
+    </div>
+
+    <!-- QOL: Phone & ADB status -->
+    <div class="dash-section">
+      <h3 class="set-h3"><span class="msr">smartphone</span> Phone &amp; ADB</h3>
+      <div id="adbStatus"></div>
+    </div>
+
+    <!-- Multi-device: registry device -> profile mapping -->
+    <div class="dash-section">
+      <h3 class="set-h3"><span class="msr">devices_other</span> Devices</h3>
+      <p class="set-note" style="margin:0 0 12px">Each connected phone is registered here and mapped to a profile — backups from that phone land in that profile's vault folder.</p>
+      <div id="devicesList"></div>
+    </div>
+
+    <!-- QOL: Server preferences (persisted di SQLite) -->
+    <div class="dash-section">
+      <h3 class="set-h3"><span class="msr">tune</span> Server Preferences</h3>
+      <div id="serverPrefs"></div>
+    </div>
+
+    <!-- QOL: Appearance & behavior -->
+    <div class="dash-section">
+      <h3 class="set-h3"><span class="msr">palette</span> Appearance &amp; Behavior</h3>
+      <div id="appearancePrefs"></div>
+    </div>
+
+    <!-- Account & security -->
+    <div class="dash-section">
+      <h3 class="set-h3"><span class="msr">lock</span> Account &amp; Security</h3>
+      <div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+          <div>
+            <label class="set-label">Current Password</label>
+            <input id="pwOld" type="password" autocomplete="off" name="nigiro-pw-current" data-1p-ignore data-lpignore="true" data-bwignore data-form="ignore" class="nui-input" style="width:220px;padding:12px 14px;border:1px solid var(--n-line-2)">
+          </div>
+          <div>
+            <label class="set-label">New Password</label>
+            <input id="pwNew" type="password" autocomplete="off" name="nigiro-pw-new" data-1p-ignore data-lpignore="true" data-bwignore data-form="ignore" class="nui-input" style="width:220px;padding:12px 14px;border:1px solid var(--n-line-2)">
+          </div>
+        </div>
+        <button class="n-btn" style="margin-top:14px" onclick="changePassword(this)"><span class="msr" style="font-size:16px;vertical-align:-3px">key</span> Change Password</button>
+        <div id="pwStatus" class="set-note" style="margin-top:10px"></div>
+        <div style="margin-top:22px;padding-top:16px;border-top:1px solid var(--n-line)">
+          <div class="set-row-name" style="margin-bottom:2px">Password Recovery</div>
+          <div class="set-row-sub" style="margin-bottom:12px">Set A Security Question. If You Forget Your Password, Answer It On The Login Page To Reset — No Email Needed.</div>
+          <div id="recoveryExisting" class="set-note" style="margin-bottom:10px"></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+            <div style="flex:1;min-width:220px">
+              <label class="set-label">Security Question</label>
+              <input id="recQ" placeholder="e.g. What Is The Name Of My First Pet?" class="nui-input" style="border:1px solid var(--n-line-2)">
+            </div>
+            <div style="flex:1;min-width:220px">
+              <label class="set-label">Answer</label>
+              <input id="recA" placeholder="Answer (Case-Insensitive)" class="nui-input" style="border:1px solid var(--n-line-2)">
+            </div>
+          </div>
+          <button class="n-btn" style="margin-top:14px" onclick="saveRecovery()"><span class="msr" style="font-size:16px;vertical-align:-3px">shield</span> Save Recovery</button>
+          <div id="recStatus" class="set-note" style="margin-top:10px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DB backup -->
+    <div class="dash-section">
+      <h3 class="set-h3"><span class="msr">database</span> Database Backup</h3>
+      <div>
+        <p class="set-note" style="margin:0 0 12px">Daily Automatic Backup Of The Metadata Database. Keeps 7 Days Of History.</p>
+        <label class="set-label">Backup Location</label>
+        <input id="dbBackupPath" placeholder="Pick A Folder Below Or Type (Absolute Path)" class="nui-input" style="border:1px solid var(--n-line-2);margin-bottom:4px">
+        <div id="dbBackupTree" class="set-tree">
+          <span style="color:var(--n-secondary);font-size:12px">Loading Drives…</span>
+        </div>
+        <div id="dbBackupStatus" class="set-note" style="margin:10px 0">Loading…</div>
+        <button class="n-btn" onclick="saveDbBackupPath()"><span class="msr" style="font-size:16px;vertical-align:-3px">save</span> Save Location</button>
+        <button class="n-btn" style="margin-left:8px" onclick="runDbBackup()"><span class="msr" style="font-size:16px;vertical-align:-3px">backup</span> Back Up Now</button>
+      </div>
+    </div>
+
+    <!-- Vault maintenance -->
+    <div class="dash-section">
+      <h3 class="set-h3"><span class="msr">verified</span> Vault Maintenance</h3>
+      <div>
+        <p class="set-note" style="margin:0 0 12px">Rescan finds files you copied into the vault manually (Windows Explorer) and registers them in the database — with checksum dedup, EXIF, and thumbnails. Integrity check reads every file to find missing, modified, or untracked ones.</p>
+        <button class="n-btn" onclick="runRescan()"><span class="msr" style="font-size:16px;vertical-align:-3px">folder_open</span> Rescan Vault</button>
+        <button class="n-btn" style="margin-left:8px" onclick="runIntegrity()"><span class="msr" style="font-size:16px;vertical-align:-3px">play_arrow</span> Run Integrity Check</button>
+        <div id="rescanResult" style="margin-top:14px"></div>
+        <div id="integrityResult" style="margin-top:14px"></div>
+      </div>
+    </div>
+
+    </div>
+  </section>
+
+</div>
+
+<!-- Add volume dialog -->
+<div id="volumeDialog" class="dialog-backdrop" style="display:none" onclick="if(event.target===this)closeVolumeDialog()">
+  <div class="dialog" style="max-width:420px">
+    <h3 style="margin:0 0 4px;font-size:18px;font-weight:500">Add Storage Volume</h3>
+    <p style="margin:0 0 16px;font-size:13px;color:var(--md-on-surface-variant)">New Backups Go To The Volume With The Most Free Space.</p>
+    <label class="set-label">Volume Name</label>
+    <input id="volName" placeholder="e.g. disk2" class="nui-input" style="border:1px solid var(--n-line-2);margin-bottom:12px">
+    <label class="set-label">Path (Absolute)</label>
+    <input id="volPath" placeholder="Pick From The Tree Below Or Type" class="nui-input" style="border:1px solid var(--n-line-2);margin-bottom:4px">
+    <div id="volTree" class="set-tree">
+      <span style="color:var(--n-secondary);font-size:12px">Loading Drives…</span>
+    </div>
+    <div id="volError" style="color:var(--n-accent,#D71921);font-size:12px;min-height:18px;margin-bottom:8px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="crumb" onclick="closeVolumeDialog()">Cancel</button>
+      <button class="sync-btn" style="min-width:110px" onclick="addVolume()">Add Volume</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rename volume dialog -->
+<div id="renameVolumeDialog" class="dialog-backdrop" style="display:none" onclick="if(event.target===this)closeRenameVolume()">
+  <div class="dialog" style="max-width:420px">
+    <h3 style="margin:0 0 4px;font-size:18px;font-weight:500">Rename Volume</h3>
+    <p style="margin:0 0 16px;font-size:13px;color:var(--md-on-surface-variant)">Only The Display Name Changes — Files Stay Where They Are.</p>
+    <input type="hidden" id="rvOld">
+    <label class="set-label">Volume Name</label>
+    <input id="rvName" placeholder="e.g. HDD Eksternal" class="nui-input" style="border:1px solid var(--n-line-2);margin-bottom:12px">
+    <div id="rvError" style="color:var(--n-accent,#D71921);font-size:12px;min-height:18px;margin-bottom:8px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="crumb" onclick="closeRenameVolume()">Cancel</button>
+      <button class="sync-btn" style="min-width:110px" onclick="saveRenameVolume()">Rename</button>
+    </div>
+  </div>
+</div>
+
+<!-- Filter dialog -->
+<div id="filterDialog" class="dialog-backdrop" style="display:none" onclick="if(event.target===this)closeFilterDialog()">
+  <div class="dialog">
+    <h3 style="margin:0 0 4px;font-size:18px;font-weight:500">Filter Gallery</h3>
+    <p style="margin:0 0 16px;font-size:13px;color:var(--md-on-surface-variant)">Narrow Down By Year And Type</p>
+    <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--md-on-surface-variant);margin-bottom:8px;display:flex;align-items:center;gap:6px"><span class="msr" style="font-size:14px">calendar_today</span> Year</div>
+    <div id="filterYears" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px"></div>
+    <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--md-on-surface-variant);margin-bottom:8px;display:flex;align-items:center;gap:6px"><span class="msr" style="font-size:14px">category</span> Type</div>
+    <div id="filterTypes" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    <div style="margin-top:18px;text-align:right">
+      <button class="crumb" onclick="closeFilterDialog()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Backup options dialog -->
+<div id="backupDialog" class="dialog-backdrop" style="display:none" onclick="if(event.target===this)closeBackupDialog()">
+  <div class="dialog">
+    <h3 style="margin:0 0 4px;font-size:18px;font-weight:500">What Do You Want To Backup?</h3>
+    <p style="margin:0 0 16px;font-size:13px;color:var(--md-on-surface-variant)">Choose What To Copy From Your Device</p>
+    <button class="opt" onclick="quickSync('new')" style="border:1px solid var(--n-accent,#D71921)">
+      <span class="msr" style="color:var(--n-accent,#D71921)">bolt</span>
+      <span style="flex:1;text-align:left"><b>Everything New</b><br><small style="color:var(--md-on-surface-variant)">One Click — Only Files Not Yet In The Vault (All Folders)</small></span>
+      <span class="msr">chevron_right</span>
+    </button>
+    <button class="opt" onclick="quickSync('photos')">
+      <span class="msr" style="color:var(--md-primary)">image</span>
+      <span style="flex:1;text-align:left"><b>Photos Only</b><br><small style="color:var(--md-on-surface-variant)">JPG, PNG, HEIC, WEBP</small></span>
+      <span class="msr">chevron_right</span>
+    </button>
+    <button class="opt" onclick="quickSync('videos')">
+      <span class="msr" style="color:var(--md-primary)">movie</span>
+      <span style="flex:1;text-align:left"><b>Videos Only</b><br><small style="color:var(--md-on-surface-variant)">MP4, MKV, WEBM</small></span>
+      <span class="msr">chevron_right</span>
+    </button>
+    <button class="opt" onclick="quickSync('allfiles')">
+      <span class="msr" style="color:var(--md-primary)">photo_library</span>
+      <span style="flex:1;text-align:left"><b>All Files</b><br><small style="color:var(--md-on-surface-variant)">Full Backup — All Folders (Except App Data &amp; OBB)</small></span>
+      <span class="msr">chevron_right</span>
+    </button>
+    <button class="opt" onclick="backupContacts()">
+      <span class="msr" style="color:var(--md-primary)">contacts</span>
+      <span style="flex:1;text-align:left"><b>Contacts, SMS & Call Log</b><br><small style="color:var(--md-on-surface-variant)">Full Data Backup — VCF + JSON</small></span>
+      <span class="msr">chevron_right</span>
+    </button>
+    <button class="opt" onclick="openPicker()">
+      <span class="msr" style="color:var(--md-primary)">folder_managed</span>
+      <span style="flex:1;text-align:left"><b>Custom — Pick Files & Folders</b><br><small style="color:var(--md-on-surface-variant)">Browse Phone Contents, Choose Yourself</small></span>
+      <span class="msr">chevron_right</span>
+    </button>
+    <div style="margin-top:12px;text-align:right">
+      <button class="crumb" onclick="closeBackupDialog()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm backup (Everything New — scan dulu, baru jalan) — Nothing UI: mono, hairline, stat blocks -->
+<div id="confirmBackupDialog" class="dialog-backdrop" style="display:none" onclick="if(event.target===this)closeConfirmBackup()">
+  <div class="dialog" style="width:min(480px,92vw);padding:0;overflow:hidden">
+    <div style="padding:18px 22px 14px;border-bottom:1px solid var(--n-line)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="msr" style="font-size:22px;color:var(--n-accent,#D71921)">cloud_sync</span>
+        <div style="flex:1">
+          <div style="font-family:var(--n-f-head);font-weight:600;font-size:17px;color:var(--n-display)">Start Backup?</div>
+          <div style="font-family:var(--n-f-mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--n-secondary);margin-top:2px">Scan Complete — Review Before Starting</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--n-line);border-bottom:1px solid var(--n-line)">
+      <div style="background:var(--md-surface,transparent);padding:14px 22px">
+        <div style="font-family:var(--n-f-mono);font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--n-secondary)">New Files</div>
+        <div id="cfNewCount" style="font-family:var(--n-f-mono);font-size:24px;font-weight:700;color:var(--n-display);margin-top:4px">—</div>
+        <div id="cfNewSize" style="font-family:var(--n-f-mono);font-size:11px;color:var(--n-accent,#D71921);font-weight:600;margin-top:1px">—</div>
+      </div>
+      <div style="background:var(--md-surface,transparent);padding:14px 22px">
+        <div style="font-family:var(--n-f-mono);font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--n-secondary)">Estimated Time</div>
+        <div id="cfEta" style="font-family:var(--n-f-mono);font-size:24px;font-weight:700;color:var(--n-display);margin-top:4px">—</div>
+        <div style="font-family:var(--n-f-mono);font-size:11px;color:var(--n-secondary);margin-top:1px">USB ~10 MB/s</div>
+      </div>
+    </div>
+    <div id="confirmBackupBody" style="padding:12px 22px;font-family:var(--n-f-mono);font-size:11px;line-height:1.9;color:var(--n-secondary)"></div>
+    <div style="display:flex;gap:0;border-top:1px solid var(--n-line)">
+      <button onclick="closeConfirmBackup()" style="flex:1;padding:13px 0;background:transparent;border:none;border-right:1px solid var(--n-line);font-family:var(--n-f-mono);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--n-secondary);cursor:pointer">Cancel</button>
+      <button id="confirmBackupGo" onclick="confirmBackupGo()" style="flex:1;padding:13px 0;background:var(--n-accent,#D71921);border:none;font-family:var(--n-f-mono);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px">
+        <span class="msr" style="font-size:15px">bolt</span> Start Backup
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Trash / Duplicates dialog -->
+<div id="toolDialog" class="dialog-backdrop" style="display:none" onclick="if(event.target===this)closeToolDialog()">
+  <div class="dialog" style="width:min(680px,95vw);max-height:min(600px,90vh);display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span class="msr" id="td-icon" style="color:var(--md-primary)">delete</span>
+      <b id="td-title" style="font-size:16px;flex:1"></b>
+      <button class="icon-btn" onclick="closeToolDialog()"><span class="msr">close</span></button>
+    </div>
+    <div id="td-body" style="flex:1;overflow-y:auto;font-size:13px"></div>
+  </div>
+</div>
+
+<!-- Confirm dialog (M3, pengganti confirm() browser) -->
+<div id="confirmDialog" class="dialog-backdrop" style="display:none">
+  <div class="dialog" style="width:min(760px,92vw)">
+    <h3 id="cd-title" style="margin:0 0 6px;font-size:17px;font-weight:500"></h3>
+    <p id="cd-body" style="margin:0 0 18px;font-size:13px;color:var(--md-on-surface-variant)"></p>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="crumb" onclick="closeConfirmDialog()">Cancel</button>
+      <button id="cd-ok" class="sync-btn" style="min-width:90px">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Prompt dialog (input teks, M3 — pengganti prompt()) -->
+<div id="promptDialog" class="dialog-backdrop" style="display:none">
+  <div class="dialog" style="width:min(400px,92vw)">
+    <h3 id="pd-title" style="margin:0 0 6px;font-size:17px;font-weight:500"></h3>
+    <p id="pd-body" style="margin:0 0 14px;font-size:13px;color:var(--md-on-surface-variant)"></p>
+    <input id="pd-input" style="width:100%;box-sizing:border-box;padding:10px 14px;border-radius:8px;border:1px solid var(--n-line);background:var(--n-raised);color:var(--n-primary);font-family:var(--n-f-mono);font-size:13px;outline:none;margin-bottom:16px">
+    <p id="pd-hint" style="display:none;margin:-8px 0 14px;font-size:11px;font-family:var(--n-f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--n-secondary)"></p>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="crumb" onclick="closePromptDialog()">Cancel</button>
+      <button id="pd-ok" class="sync-btn" style="min-width:90px">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Year selection dialog (backup berkala per rentang tahun) -->
+<div id="yearDialog" class="dialog-backdrop" style="display:none">
+  <div class="dialog" style="width:min(460px,92vw)">
+    <h3 style="margin:0 0 4px;font-size:18px;font-weight:500">Select Years To Backup</h3>
+    <p style="margin:0 0 16px;font-size:13px;color:var(--md-on-surface-variant)">Choose which years to include. Unchecked years stay on your phone.</p>
+    <div id="yearList" style="max-height:300px;overflow-y:auto;margin-bottom:16px"></div>
+    <div id="yearScanTerm" style="display:none;margin:-8px 0 12px;background:var(--md-surface-container);border:1px solid var(--md-outline-variant);border-radius:12px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--md-outline-variant)">
+        <span class="msr" style="font-size:16px;color:var(--md-primary)">terminal</span>
+        <span style="font-size:11px;letter-spacing:.5px;color:var(--md-on-surface-variant);font-family:'JetBrains Mono',monospace">SCANNING DEVICE</span>
+        <span id="yearScanPct" style="margin-left:auto;font-size:11px;color:var(--md-primary);font-family:'JetBrains Mono',monospace">0%</span>
+      </div>
+      <div style="height:3px;background:var(--md-surface-container-high)"><div id="yearScanBar" style="height:100%;width:0%;background:var(--md-primary);transition:width .3s"></div></div>
+      <pre id="yearScanLog" style="margin:0;padding:10px 12px;max-height:110px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.7;color:var(--md-on-surface-variant);white-space:pre-wrap;word-break:break-all"></pre>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="crumb" onclick="closeYearDialog()">Cancel</button>
+      <button class="sync-btn" id="yearGoBtn" onclick="confirmYearBackup()">Backup</button>
+    </div>
+  </div>
+</div>
+
+<!-- Free Up Space dialog (hapus file di HP yang sudah ter-backup) -->
+<div id="cleanupDialog" class="dialog-backdrop" style="display:none">
+  <div class="dialog" style="width:min(520px,92vw)">
+    <h3 style="margin:0 0 4px;font-size:18px;font-weight:500">Free Up Device Space</h3>
+    <p style="margin:0 0 16px;font-size:13px;color:var(--md-on-surface-variant)">Delete Files On Your Phone That Are Already Backed Up. Files Without A Backup Are Never Shown.</p>
+    <div id="cleanupBody" style="max-height:60vh;overflow-y:auto;margin-bottom:16px">
+      <p style="color:var(--md-on-surface-variant);font-size:13px;padding:20px;text-align:center">Scanning Device…</p>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="crumb" onclick="closeCleanupDialog()">Cancel</button>
+      <button class="sync-btn" id="cleanupGoBtn" onclick="cleanupConfirm()" disabled>Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom picker dialog (browse HP + preview) -->
+<div id="pickerDialog" class="dialog-backdrop" style="display:none">
+  <div class="dialog" style="width:min(760px,95vw);height:min(600px,90vh);display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <button class="icon-btn" onclick="closePicker()"><span class="msr">arrow_back</span></button>
+      <h3 style="margin:0;font-size:18px;font-weight:500;flex:1">Pick What To Backup</h3>
+      <select id="pickerDevice" onchange="onPickerDeviceChange()" style="display:none;margin-right:8px;padding:6px 10px;border:1px solid var(--md-outline-variant);border-radius:0;background:var(--md-surface);color:var(--md-on-surface);font-family:var(--n-f-mono);font-size:12px"></select>
+      <button class="sync-btn" id="pickerGo" onclick="pickerGo()" disabled>
+        <span class="msr" style="font-size:18px">backup</span>
+        <span id="pickerGoLabel">Backup</span>
+      </button>
+    </div>
+    <div class="crumbs" id="pickerCrumbs" style="padding:0 0 8px"></div>
+    <div id="pickerList" style="flex:1;overflow-y:auto;border:1px solid var(--md-outline-variant);border-radius:12px;padding:4px"></div>
+    <div id="pickerSummary" style="padding-top:10px;font-size:13px;color:var(--md-on-surface-variant)"></div>
+    <!-- scan result confirm -->
+    <div id="scanConfirm" style="display:none;margin-top:12px;padding:16px;background:var(--md-surface-container);border-radius:12px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span class="msr" style="color:var(--md-primary)">fact_check</span>
+        <b id="scanTitle" style="font-size:15px"></b>
+      </div>
+      <div id="scanFiles" style="font-size:12px;color:var(--md-on-surface-variant);max-height:120px;overflow-y:auto;margin-bottom:12px;font-family:'JetBrains Mono',monospace"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="crumb" onclick="cancelScan()">Cancel</button>
+        <button class="sync-btn" onclick="confirmScan()" style="height:36px;padding:0 20px;font-size:13px">Backup Now</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- File preview dialog -->
+<div id="filePreview" class="dialog-backdrop" style="display:none" onclick="if(event.target===this)closePreview()">
+  <div class="dialog" style="width:min(860px,95vw);height:min(640px,90vh);display:flex;flex-direction:column;padding:0;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--md-outline-variant)">
+      <span class="msr" id="fp-icon" style="color:var(--md-primary)">draft</span>
+      <b id="fp-name" style="font-size:14px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></b>
+      <a id="fp-download" download class="icon-btn" title="Download" style="text-decoration:none"><span class="msr">download</span></a>
+      <button class="icon-btn" onclick="closePreview()"><span class="msr">close</span></button>
+    </div>
+    <div id="fp-body" style="flex:1;overflow:auto;background:#525659;display:flex;align-items:center;justify-content:center"></div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <div class="lb-top">
+    <button class="icon-btn" onclick="closeLB()"><span class="msr">arrow_back</span></button>
+    <span class="lb-name" id="lb-name"></span>
+    <span style="margin-left:auto;display:flex;gap:4px">
+      <button class="icon-btn" title="Zoom" onclick="toggleZoomMode()"><span class="msr" id="lb-zoom-btn">zoom_in</span></button>
+      <button class="icon-btn" title="Info" onclick="toggleInfo()"><span class="msr" id="lb-info-btn">info</span></button>
+      <button class="icon-btn" title="Favorite" onclick="toggleFav()"><span class="msr" id="lb-fav">favorite_border</span></button>
+      <button class="icon-btn" title="Add To Album" onclick="showAddToAlbum(lbFile.id)"><span class="msr">photo_album</span></button>
+      <button class="icon-btn" title="Archive" onclick="archiveCurrent()"><span class="msr" id="lb-arch">archive</span></button>
+      <button class="icon-btn" title="Move To Trash" onclick="lbTrash()"><span class="msr">delete</span></button>
+      <a id="lb-download" download><button class="icon-btn" title="Download"><span class="msr">download</span></button></a>
+    </span>
+  </div>
+  <div class="lb-stage" id="lb-stage">
+    <button class="lb-nav prev" onclick="nav(-1)"><span class="msr">chevron_left</span></button>
+    <div id="lb-zoomwrap" style="width:100%;height:100%;overflow:hidden;display:flex;align-items:center;justify-content:center">
+      <img id="lb-img" style="cursor:zoom-in">
+      <video id="lb-vid" controls></video>
+    </div>
+    <!-- Zoom Navigator (Google Photos style minimap + slider) -->
+    <div id="lb-minimap" style="display:none;position:absolute;top:12px;right:12px;width:180px;background:rgba(0,0,0,.9);border-radius:12px;padding:10px;z-index:5">
+      <div id="mm-wrap" style="position:relative;border-radius:8px;overflow:hidden">
+        <img id="mm-img" style="width:100%;display:block;pointer-events:none">
+        <div id="mm-box" style="position:absolute;border:2px solid #8ab4f8;background:rgba(138,180,248,.2);cursor:move;border-radius:2px"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;margin-top:8px">
+        <button class="icon-btn" style="color:#e3e3e3;width:28px;height:28px" onclick="mmZoomStep(-0.5)"><span class="msr" style="font-size:16px">remove</span></button>
+        <input type="range" id="mm-slider" min="1" max="5" step="0.1" value="1" style="flex:1;min-width:0;accent-color:#8ab4f8">
+        <button class="icon-btn" style="color:#e3e3e3;width:28px;height:28px" onclick="mmZoomStep(0.5)"><span class="msr" style="font-size:16px">add</span></button>
+      </div>
+    </div>
+    <button class="lb-nav next" onclick="nav(1)"><span class="msr">chevron_right</span></button>
+    <!-- Info panel (Google Photos style) -->
+    <div id="lb-info" style="display:none;position:absolute;top:0;right:0;bottom:0;width:320px;background:#1f1f1f;color:#e3e3e3;padding:20px;overflow-y:auto;border-left:1px solid #333">
+      <div style="display:flex;align-items:center;margin-bottom:16px">
+        <b style="font-size:15px;flex:1">Info</b>
+        <button class="icon-btn" onclick="toggleInfo()" style="color:#e3e3e3"><span class="msr">close</span></button>
+      </div>
+      <div id="lb-info-body" style="font-size:13px;line-height:2"></div>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="vendor/marked/marked.min.js"></script>
+<script src="vendor/purify/purify.min.js"></script>
+</body>
+</html>

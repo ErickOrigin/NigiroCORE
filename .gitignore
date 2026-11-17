@@ -1,0 +1,18 @@
+# secrets & config
+server/.env
+
+# runtime data (stays on disk, not in repo)
+NigiroCORE_Data/
+*.log
+*.mbtree
+ffmpeg2pass-*.log
+
+# local reference material (saved pages, junk)
+reference/
+
+# deps
+node_modules/
+
+# OS junk
+Thumbs.db
+.DS_Store

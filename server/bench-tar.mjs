@@ -1,0 +1,10 @@
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+const run = promisify(execFile);
+const ADB = "C:\\platform-tools\\adb.exe";
+const { stdout: list } = await run(ADB, ["shell", "find /storage/emulated/0/DCIM/Camera -maxdepth 1 -type f -name '*.jpg' 2>/dev/null"]);
+const files = list.split("\n").map(s => s.trim()).filter(Boolean).slice(0, 100);
+console.log("files:", files.length);
+let t0 = Date.now();
+const { stdout } = await run(ADB, ["exec-out", `tar -cf - -C /storage/emulated/0/DCIM/Camera ${files.map(f => `'${f.split("/").pop()}'`).join(" ")}`], { maxBuffer: 1024 * 1024 * 1024, encoding: "buffer" });
+console.log(`tar batch 100: ${((Date.now() - t0) / 1000).toFixed(2)}s, bytes: ${stdout.length}`);

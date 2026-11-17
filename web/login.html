@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Sign In — NigiroCORE</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <meta name="color-scheme" content="light dark">
+  <link rel="preload" href="/fonts/MaterialSymbolsRounded.woff2" as="font" type="font/woff2" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box }
+    :root {
+      --n-bg:#FAFAFA; --n-primary:#1A1A1A; --n-secondary:#757575; --n-line:#E8E8E8;
+      --n-raised:#F2F2F2; --n-display:#0D0D0D; --n-accent:#D71921;
+      --n-f-ui:"Plus Jakarta Sans",sans-serif; --n-f-mono:"JetBrains Mono",monospace;
+    }
+    @media (prefers-color-scheme:dark) {
+      :root { --n-bg:#0D0D0D; --n-primary:#EDEDED; --n-secondary:#8A8A8A; --n-line:#242424; --n-raised:#1A1A1A; --n-display:#FAFAFA; }
+    }
+    body { background:var(--n-bg); font-family:var(--n-f-ui); display:flex; align-items:center; justify-content:center; min-height:100vh; color:var(--n-primary) }
+    .card { width:min(340px,90vw); padding:36px 32px; background:var(--n-raised); border-radius:20px; border:1px solid var(--n-line) }
+    .ttl { font-family:var(--n-f-ui); font-weight:700; font-size:22px; letter-spacing:.04em; text-align:center }
+    .sub { font-size:12px; color:var(--n-secondary); text-align:center; margin-top:4px }
+    input { width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--n-line); background:var(--n-bg); color:var(--n-primary); font:400 14px var(--n-f-ui); outline:none; margin-top:10px }
+    input:focus { border-color:var(--n-accent) }
+    button { width:100%; padding:12px; margin-top:16px; border:none; border-radius:999px; background:var(--n-accent); color:#fff; font:600 13px var(--n-f-ui); letter-spacing:.06em; cursor:pointer }
+    button:disabled { opacity:.6; cursor:default }
+    .err { font-size:12px; color:var(--n-accent); text-align:center; margin-top:10px; display:none }
+    .forgot { font-size:11px; color:var(--n-secondary); text-align:center; margin-top:14px; cursor:pointer; text-decoration:underline; text-underline-offset:3px; letter-spacing:.04em }
+    .forgot:hover { color:var(--n-accent) }
+    .back { font-size:11px; color:var(--n-secondary); text-align:center; margin-top:14px; cursor:pointer; letter-spacing:.04em; display:none }
+    .back:hover { color:var(--n-primary) }
+    .q { font-size:13px; font-weight:600; text-align:center; margin-top:14px; color:var(--n-primary) }
+    input { border-radius:12px }
+  </style>
+</head>
+<body>
+  <form class="card" id="f" method="post" action="javascript:void(0)">
+    <div class="ttl">NigiroCORE</div>
+    <div class="sub" id="sub">Personal Cloud &amp; Server Panel</div>
+    <div id="loginFields">
+      <input id="u" placeholder="Username" autocomplete="username" name="nigiro-username" required autofocus>
+      <input id="p" type="password" placeholder="Password" autocomplete="current-password" name="nigiro-password" required>
+    </div>
+    <div id="recoveryFields" style="display:none">
+      <div class="q" id="rq"></div>
+      <input id="ra" placeholder="Your Answer" autocomplete="off" name="nigiro-answer" data-1p-ignore data-lpignore="true">
+      <input id="np" type="password" autocomplete="new-password" name="nigiro-new-password" data-1p-ignore data-lpignore="true" placeholder="New Password (4+ Characters)">
+    </div>
+    <div class="err" id="e"></div>
+    <button type="submit" id="b">SIGN IN</button>
+    <div class="forgot" id="fg">Forgot Password?</div>
+    <div class="back" id="bk">← Back To Sign In</div>
+  </form>
+  <script>
+    let mode = "login";
+    const show = (id, on) => document.getElementById(id).style.display = on ? "" : "none";
+    const err = (msg) => { const e = document.getElementById("e"); e.style.display = msg ? "block" : "none"; e.textContent = msg ?? ""; };
+    document.getElementById("fg").onclick = async () => {
+      const r = await fetch("/api/recovery/question").catch(() => null);
+      if (!r || !r.ok) { err(r && r.status === 404 ? "No Recovery Question Set — Ask The Server Owner" : "Server Tidak Merespons"); return; }
+      const { question } = await r.json();
+      mode = "recovery";
+      err(null);
+      document.getElementById("rq").textContent = question;
+      show("loginFields", false); show("recoveryFields", true); show("fg", false); show("bk", true);
+      document.getElementById("b").textContent = "RESET PASSWORD";
+      document.getElementById("sub").textContent = "Answer Your Security Question";
+      document.getElementById("ra").focus();
+    };
+    document.getElementById("bk").onclick = () => {
+      mode = "login";
+      err(null);
+      show("loginFields", true); show("recoveryFields", false); show("fg", true); show("bk", false);
+      document.getElementById("b").textContent = "SIGN IN";
+      document.getElementById("sub").textContent = "Personal Cloud & Server Panel";
+    };
+    document.getElementById("f").addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const b = document.getElementById("b");
+      b.disabled = true;
+      if (mode === "login") {
+        b.textContent = "SIGNING IN…";
+        const r = await fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user: u.value, pass: p.value }) }).catch(() => null);
+        b.disabled = false; b.textContent = "SIGN IN";
+        if (r && r.ok) { location.href = "/core"; return; }
+        err(r ? "Username Atau Password Salah" : "Server Tidak Merespons");
+      } else {
+        b.textContent = "RESETTING…";
+        const r = await fetch("/api/recovery/reset", { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ answer: ra.value, newPass: np.value }) }).catch(() => null);
+        b.disabled = false; b.textContent = "RESET PASSWORD";
+        if (r && r.ok) { err(null); b.textContent = "SIGN IN"; document.getElementById("bk").onclick(); err(null);
+          document.getElementById("e").style.color = "#1e8e3e";
+          err("Password Reset — Sign In With Your New Password"); setTimeout(() => { err(null); document.getElementById("e").style.color = ""; }, 4000);
+          return; }
+        err(r ? (await r.json().catch(() => ({}))).error ?? "Reset Failed" : "Server Tidak Merespons");
+      }
+    });
+  </script>
+</body>
+</html>
